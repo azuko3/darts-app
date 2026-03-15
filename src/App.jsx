@@ -61,39 +61,38 @@ function hexToRgb(hex) {
 // ─── Dartboard Canvas ─────────────────────────────────────────────────────────
 function DartBoard({ playerColor, onScore, pendingDarts, onUndo }) {
   const canvasRef = useRef(null);
+  const magCanvasRef = useRef(null);
+  const wrapRef = useRef(null);
+  const [touch, setTouch] = useState(null); // {cx, cy, mx, my, hit} in canvas coords + screen pos
   const SIZE = 300;
   const CX = SIZE/2, CY = SIZE/2;
   const R = SIZE/2 - 10;
   const SLICE = (2*Math.PI)/20;
   const OFFSET = -Math.PI/2 - SLICE/2;
+  const MAG_SIZE = 120; // magnifier display size px
+  const MAG_ZOOM = 3;
+  const MAG_SRC  = MAG_SIZE / MAG_ZOOM; // source region size in canvas coords
 
   const rBullInner = R*0.057, rBullOuter = R*0.144;
   const rTripleIn  = R*0.486, rTripleOut  = R*0.554;
   const rDoubleIn  = R*0.773, rDoubleOut  = R*0.841;
   const rNumRing   = R*0.935;
 
-  function drawBoard(ctx) {
+  function drawBoardOnCtx(ctx, highlightHit) {
     ctx.clearRect(0,0,SIZE,SIZE);
     ctx.beginPath(); ctx.arc(CX,CY,R,0,2*Math.PI); ctx.fillStyle='#111'; ctx.fill();
-
     for (let i=0;i<20;i++) {
       const a1=OFFSET+i*SLICE, a2=a1+SLICE;
       const color = i%2===0 ? '#1c1c1c' : '#f0dfc0';
-      // single inner
       drawSector(ctx,CX,CY,rBullOuter,rTripleIn,a1,a2,color);
-      // single outer
       drawSector(ctx,CX,CY,rTripleOut,rDoubleIn,a1,a2,color);
-      // triple
       drawSector(ctx,CX,CY,rTripleIn,rTripleOut,a1,a2,i%2===0?'#c0392b':'#1a7a3c');
-      // double
       drawSector(ctx,CX,CY,rDoubleIn,rDoubleOut,a1,a2,i%2===0?'#c0392b':'#1a7a3c');
     }
-    // wire rings
     [rTripleIn,rTripleOut,rDoubleIn,rDoubleOut,rBullOuter].forEach(r=>{
       ctx.beginPath(); ctx.arc(CX,CY,r,0,2*Math.PI);
       ctx.strokeStyle='#888'; ctx.lineWidth=0.8; ctx.stroke();
     });
-    // spokes
     for(let i=0;i<20;i++){
       const a=OFFSET+i*SLICE;
       ctx.beginPath();
@@ -101,21 +100,17 @@ function DartBoard({ playerColor, onScore, pendingDarts, onUndo }) {
       ctx.lineTo(CX+rDoubleOut*Math.cos(a),CY+rDoubleOut*Math.sin(a));
       ctx.strokeStyle='#888'; ctx.lineWidth=0.5; ctx.stroke();
     }
-    // outer bull
     ctx.beginPath(); ctx.arc(CX,CY,rBullOuter,0,2*Math.PI);
     ctx.fillStyle='#1a7a3c'; ctx.fill();
     ctx.strokeStyle='#888'; ctx.lineWidth=0.8; ctx.stroke();
-    // inner bull
     ctx.beginPath(); ctx.arc(CX,CY,rBullInner,0,2*Math.PI);
     ctx.fillStyle='#c0392b'; ctx.fill();
-    // numbers
     ctx.fillStyle='#f0dfc0'; ctx.font='bold 11px sans-serif';
     ctx.textAlign='center'; ctx.textBaseline='middle';
     for(let i=0;i<20;i++){
       const a=OFFSET+i*SLICE+SLICE/2;
       ctx.fillText(BOARD_NUMS[i], CX+rNumRing*Math.cos(a), CY+rNumRing*Math.sin(a));
     }
-    // draw pending darts as dots
     pendingDarts.forEach((d,idx)=>{
       ctx.beginPath(); ctx.arc(d.x,d.y,5,0,2*Math.PI);
       ctx.fillStyle=playerColor; ctx.fill();
@@ -124,6 +119,40 @@ function DartBoard({ playerColor, onScore, pendingDarts, onUndo }) {
       ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(idx+1, d.x, d.y);
     });
+    // crosshair for active touch
+    if (highlightHit) {
+      const {mx:hx, my:hy} = highlightHit;
+      ctx.beginPath(); ctx.arc(hx,hy,7,0,2*Math.PI);
+      ctx.strokeStyle=playerColor; ctx.lineWidth=2; ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(hx-12,hy); ctx.lineTo(hx+12,hy);
+      ctx.moveTo(hx,hy-12); ctx.lineTo(hx,hy+12);
+      ctx.strokeStyle=playerColor; ctx.lineWidth=1; ctx.stroke();
+    }
+  }
+
+  function drawMagnifier(srcCanvas, mx, my) {
+    const magCanvas = magCanvasRef.current;
+    if (!magCanvas) return;
+    const mCtx = magCanvas.getContext('2d');
+    const half = MAG_SRC/2;
+    const sx = mx - half, sy = my - half;
+    // clip to circle
+    mCtx.clearRect(0,0,MAG_SIZE,MAG_SIZE);
+    mCtx.save();
+    mCtx.beginPath(); mCtx.arc(MAG_SIZE/2,MAG_SIZE/2,MAG_SIZE/2,0,2*Math.PI);
+    mCtx.clip();
+    mCtx.drawImage(srcCanvas, sx,sy,MAG_SRC,MAG_SRC, 0,0,MAG_SIZE,MAG_SIZE);
+    // crosshair in center
+    mCtx.strokeStyle=playerColor; mCtx.lineWidth=1.5;
+    mCtx.beginPath();
+    mCtx.moveTo(MAG_SIZE/2-16,MAG_SIZE/2); mCtx.lineTo(MAG_SIZE/2+16,MAG_SIZE/2);
+    mCtx.moveTo(MAG_SIZE/2,MAG_SIZE/2-16); mCtx.lineTo(MAG_SIZE/2,MAG_SIZE/2+16);
+    mCtx.stroke();
+    mCtx.restore();
+    // border ring
+    mCtx.beginPath(); mCtx.arc(MAG_SIZE/2,MAG_SIZE/2,MAG_SIZE/2-1,0,2*Math.PI);
+    mCtx.strokeStyle=playerColor; mCtx.lineWidth=2.5; mCtx.stroke();
   }
 
   function drawSector(ctx,cx,cy,r1,r2,a1,a2,color){
@@ -149,32 +178,99 @@ function DartBoard({ playerColor, onScore, pendingDarts, onUndo }) {
     return {pts:num*2,label:`D${num}`};
   }
 
+  function getCanvasCoords(e, isTouch) {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const scale = SIZE / rect.width;
+    const src = isTouch ? e.touches[0] : e;
+    return {
+      mx: (src.clientX - rect.left) * scale,
+      my: (src.clientY - rect.top) * scale,
+      screenX: src.clientX - rect.left,
+      screenY: src.clientY - rect.top,
+      screenW: rect.width,
+    };
+  }
+
   useEffect(()=>{
     const canvas=canvasRef.current;
     if(!canvas) return;
     const ctx=canvas.getContext('2d');
-    drawBoard(ctx);
+    drawBoardOnCtx(ctx, touch);
+    if (touch) drawMagnifier(canvas, touch.mx, touch.my);
   });
 
+  // Touch handlers — show mag on touchstart/move, commit on touchend
+  function handleTouchStart(e) {
+    e.preventDefault();
+    if(pendingDarts.length>=3) return;
+    const {mx,my,screenX,screenY,screenW} = getCanvasCoords(e, true);
+    const hit = hitTest(mx,my);
+    setTouch({mx,my,screenX,screenY,screenW,hit});
+  }
+  function handleTouchMove(e) {
+    e.preventDefault();
+    if(pendingDarts.length>=3) return;
+    const {mx,my,screenX,screenY,screenW} = getCanvasCoords(e, true);
+    const hit = hitTest(mx,my);
+    setTouch({mx,my,screenX,screenY,screenW,hit});
+  }
+  function handleTouchEnd(e) {
+    e.preventDefault();
+    if (!touch || !touch.hit) { setTouch(null); return; }
+    onScore({pts:touch.hit.pts, label:touch.hit.label, x:touch.mx, y:touch.my});
+    setTouch(null);
+  }
+
+  // Mouse click fallback for desktop
   function handleClick(e){
     if(pendingDarts.length>=3) return;
-    const canvas=canvasRef.current;
-    const rect=canvas.getBoundingClientRect();
-    const scale=SIZE/rect.width;
-    const mx=(e.clientX-rect.left)*scale;
-    const my=(e.clientY-rect.top)*scale;
+    const {mx,my} = getCanvasCoords(e, false);
     const hit=hitTest(mx,my);
     if(!hit) return;
     onScore({pts:hit.pts, label:hit.label, x:mx, y:my});
   }
 
+  // Magnifier position: above finger, centered, flip if near top
+  const MAG_OFFSET = 90;
+  const magStyle = touch ? {
+    position:'absolute',
+    left: Math.min(Math.max(touch.screenX - MAG_SIZE/2, 0), touch.screenW - MAG_SIZE),
+    top: touch.screenY - MAG_OFFSET - MAG_SIZE < 0
+      ? touch.screenY + 30
+      : touch.screenY - MAG_OFFSET - MAG_SIZE,
+    width: MAG_SIZE, height: MAG_SIZE,
+    borderRadius:'50%', overflow:'hidden',
+    pointerEvents:'none', zIndex:50,
+    boxShadow:`0 0 0 2px ${playerColor}, 0 4px 20px rgba(0,0,0,0.6)`,
+  } : null;
+
   return (
-    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'8px'}}>
+    <div ref={wrapRef} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'8px',position:'relative'}}>
+      {touch && magStyle && (
+        <div style={magStyle}>
+          <canvas ref={magCanvasRef} width={MAG_SIZE} height={MAG_SIZE} style={{display:'block'}}/>
+        </div>
+      )}
+      {/* Score preview while touching */}
+      {touch && touch.hit && (
+        <div style={{
+          position:'absolute', top: -36, left:'50%', transform:'translateX(-50%)',
+          background:'#0a0a0f', border:`1px solid ${playerColor}`,
+          borderRadius:'8px', padding:'4px 14px',
+          color:playerColor, fontWeight:'bold', fontSize:'1rem',
+          pointerEvents:'none', zIndex:51, whiteSpace:'nowrap',
+          boxShadow:`0 0 12px ${playerColor}40`
+        }}>{touch.hit.label} · {touch.hit.pts}pts</div>
+      )}
       <canvas
         ref={canvasRef}
         width={SIZE} height={SIZE}
         onClick={handleClick}
-        style={{width:'100%',maxWidth:`${SIZE}px`,cursor:pendingDarts.length<3?'crosshair':'default',borderRadius:'50%'}}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{width:'100%',maxWidth:`${SIZE}px`,cursor:pendingDarts.length<3?'crosshair':'default',borderRadius:'50%',touchAction:'none'}}
       />
       {/* Dart indicators */}
       <div style={{display:'flex',gap:'8px',alignItems:'center'}}>

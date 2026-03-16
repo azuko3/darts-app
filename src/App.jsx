@@ -800,11 +800,11 @@ function MainSetup({onStart,onSolo,onKids}){
 }
 
 // ─── Multi Game ───────────────────────────────────────────────────────────────
-function MultiGame({players,startScore,onReset}){
+function MultiGame({players,startScore,onReset,onNextRound,initialGn,initialSs}){
   const {t,lang}=useT();const dir=lang==="he"?"rtl":"ltr";
-  const initP=()=>players.map((name,i)=>({name,color:PLAYER_COLORS[i],score:startScore,rounds:[],darts:0,highRound:0,busts:0}));
-  const initS=()=>players.map((name,i)=>({name,color:PLAYER_COLORS[i],wins:0,totalDarts:0,totalScore:0,totalRounds:0,allHighRound:0,totalBusts:0}));
-  const [gs,setGs]=useState(initP);const [ss,setSs]=useState(initS);const [cur,setCur]=useState(0);const [iv,setIv]=useState("");const [winner,setWinner]=useState(null);const [rn,setRn]=useState(1);const [gn,setGn]=useState(1);const [notif,setNotif]=useState(null);const [vis,setVis]=useState(false);const [pend,setPend]=useState([]);const [editing,setEditing]=useState(null);
+  const initP=()=>players.map((p,i)=>({name:p.name||p,color:PLAYER_COLORS[i],score:startScore,rounds:[],darts:0,highRound:0,busts:0}));
+  const initS=()=>initialSs||players.map((p,i)=>({name:p.name||p,color:PLAYER_COLORS[i],wins:0,totalDarts:0,totalScore:0,totalRounds:0,allHighRound:0,totalBusts:0}));
+  const [gs,setGs]=useState(initP);const [ss,setSs]=useState(initS);const [cur,setCur]=useState(0);const [iv,setIv]=useState("");const [winner,setWinner]=useState(null);const [rn,setRn]=useState(1);const [gn,setGn]=useState(initialGn||1);const [notif,setNotif]=useState(null);const [vis,setVis]=useState(false);const [pend,setPend]=useState([]);const [editing,setEditing]=useState(null);
   const showN=(msg,c="#FFD700")=>{setNotif({msg,c});setTimeout(()=>setNotif(null),2000);};
   function commit(val,du=3){
     if(isNaN(val)||val<0||val>180){showN(t.invalid_score,"#FF3CAC");return;}
@@ -817,7 +817,7 @@ function MultiGame({players,startScore,onReset}){
   function commitFromInput(){const val=parseInt(iv);setIv("");commit(val);}
   function handleDart(dart){const nd=[...pend,dart];setPend(nd);if(nd.length===3){const tot=nd.reduce((s,d)=>s+d.pts,0);setTimeout(()=>commit(tot,3),400);}}
   function editSave(nv){if(isNaN(nv)||nv<0||nv>180){setEditing(null);return;}const upd=[...gs];const p={...upd[editing]};const old=p.rounds[p.rounds.length-1];if(old===undefined){setEditing(null);return;}const ns=p.score+old-nv;if(ns<0){showN(t.invalid_score,"#FF3CAC");setEditing(null);return;}p.score=ns;p.rounds=[...p.rounds.slice(0,-1),nv];p.highRound=Math.max(...p.rounds,0);upd[editing]=p;setGs(upd);setEditing(null);showN(`✎ תוקן ל-${nv}`,"#00E5FF");}
-  const nextRound=()=>{setGs(initP());setCur(0);setIv("");setWinner(null);setRn(1);setGn(g=>g+1);setPend([]);};
+  const nextRound=()=>onNextRound(gs,gn+1,ss);
   const cp=gs[cur];const qsc=[26,41,45,60,81,85,100,140,180];
 
   if(winner){const ow=[...ss].sort((a,b)=>b.wins-a.wins)[0];return(
@@ -877,6 +877,264 @@ function MultiGame({players,startScore,onReset}){
   );
 }
 
+// ─── TurnOrder ────────────────────────────────────────────────────────────────
+function TurnOrder({players,suggestedOrder,onConfirm,onBack}){
+  const {t,lang}=useT();
+  const dir=lang==="he"?"rtl":"ltr";
+  const [order,setOrder]=useState([]); // indices into players array
+  const isNew=!suggestedOrder;
+
+  function toggle(idx){
+    if(order.includes(idx)){
+      // deselect last only
+      if(order[order.length-1]===idx) setOrder(o=>o.slice(0,-1));
+      return;
+    }
+    const newOrder=[...order,idx];
+    setOrder(newOrder);
+    // auto-complete last player
+    if(newOrder.length===players.length-1){
+      const last=players.findIndex((_,i)=>!newOrder.includes(i));
+      setTimeout(()=>setOrder([...newOrder,last]),300);
+    }
+  }
+
+  const ready=order.length===players.length;
+  const orderedPlayers=ready?order.map(i=>players[i]):null;
+
+  return(
+    <div style={{minHeight:"100vh",background:"#0a0a0f",display:"flex",flexDirection:"column",
+      alignItems:"center",justifyContent:"center",fontFamily:"'Courier New',monospace",
+      direction:dir,padding:"20px",
+      backgroundImage:"linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px)",
+      backgroundSize:"40px 40px"}}>
+
+      <div style={{alignSelf:"flex-end",marginBottom:"8px"}}><LangToggle/></div>
+
+      {/* Title */}
+      <div style={{textAlign:"center",marginBottom:"32px"}}>
+        <div style={{fontSize:"40px",marginBottom:"8px"}}>🎯</div>
+        <div style={{color:"#FF6B35",fontSize:"1.1rem",fontWeight:"bold",letterSpacing:"0.2em",marginBottom:"4px"}}>
+          {lang==="he"?"מי מתחיל?":"Who goes first?"}
+        </div>
+        <div style={{color:"#555",fontSize:"0.8rem",letterSpacing:"0.1em"}}>
+          {lang==="he"?"לחצו לפי סדר המשחק":"Tap in playing order"}
+        </div>
+      </div>
+
+      {/* Player cards */}
+      <div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(players.length,2)},1fr)`,
+        gap:"12px",width:"100%",maxWidth:"400px",marginBottom:"32px"}}>
+        {players.map((p,i)=>{
+          const pos=order.indexOf(i); // -1 if not selected
+          const selected=pos>=0;
+          const c=PLAYER_COLORS[i];
+          return(
+            <div key={i} onClick={()=>toggle(i)}
+              style={{
+                background:selected?`rgba(${rgb(c)},0.15)`:"rgba(255,255,255,0.03)",
+                border:`2px solid ${selected?c:"rgba(255,255,255,0.1)"}`,
+                borderRadius:"16px",
+                padding:"20px 16px",
+                textAlign:"center",
+                cursor:selected&&pos!==order.length-1?"default":"pointer",
+                transition:"all 0.25s",
+                boxShadow:selected?`0 0 24px ${c}40`:"none",
+                opacity:selected&&pos!==order.length-1?0.5:1,
+                position:"relative",
+                userSelect:"none",
+              }}>
+              {/* Position number */}
+              {selected?(
+                <div style={{
+                  fontSize:"2.5rem",fontWeight:"bold",color:c,
+                  textShadow:`0 0 20px ${c}`,lineHeight:1,marginBottom:"8px",
+                  animation:pos===order.length-1?"popIn 0.2s ease":"none"
+                }}>{pos+1}</div>
+              ):(
+                <div style={{
+                  fontSize:"2.5rem",fontWeight:"bold",
+                  color:"rgba(255,255,255,0.08)",lineHeight:1,marginBottom:"8px",
+                  animation:"pulseSoft 2s ease infinite"
+                }}>?</div>
+              )}
+              <div style={{
+                color:selected?c:"#888",
+                fontSize:"0.9rem",fontWeight:"bold",
+                letterSpacing:"0.05em",
+                overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"
+              }}>{p.name||p}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Progress dots */}
+      <div style={{display:"flex",gap:"8px",marginBottom:"28px"}}>
+        {players.map((_,i)=>(
+          <div key={i} style={{
+            width:"8px",height:"8px",borderRadius:"50%",
+            background:i<order.length?PLAYER_COLORS[order[i]]:"rgba(255,255,255,0.15)",
+            transition:"all 0.2s",
+            boxShadow:i<order.length?`0 0 6px ${PLAYER_COLORS[order[i]]}`:"none"
+          }}/>
+        ))}
+      </div>
+
+      {/* Buttons */}
+      <div style={{display:"flex",gap:"10px",width:"100%",maxWidth:"400px"}}>
+        <button onClick={onBack} style={{
+          padding:"14px 20px",background:"rgba(255,255,255,0.04)",
+          border:"1px solid rgba(255,255,255,0.12)",borderRadius:"10px",
+          color:"#aaa",cursor:"pointer",fontFamily:"'Courier New',monospace",fontSize:"0.9rem"
+        }}>←</button>
+        <button
+          onClick={()=>ready&&onConfirm(orderedPlayers)}
+          disabled={!ready}
+          style={{
+            flex:1,padding:"16px",
+            background:ready?"linear-gradient(135deg,#FF6B35,#FF3CAC)":"rgba(255,255,255,0.04)",
+            border:ready?"none":"1px solid rgba(255,255,255,0.08)",
+            borderRadius:"10px",color:ready?"#fff":"#444",
+            fontSize:"1.1rem",fontWeight:"bold",letterSpacing:"0.15em",
+            cursor:ready?"pointer":"default",
+            fontFamily:"'Courier New',monospace",textTransform:"uppercase",
+            boxShadow:ready?"0 0 30px rgba(255,107,53,0.4)":"none",
+            transition:"all 0.3s",
+          }}>
+          {ready?`🎯 ${lang==="he"?"התחל":"Start"}`:`${order.length}/${players.length}`}
+        </button>
+      </div>
+
+      <style>{`
+        @keyframes popIn{0%{transform:scale(0.5);opacity:0}70%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
+        @keyframes pulseSoft{0%,100%{opacity:0.3}50%{opacity:0.7}}
+      `}</style>
+    </div>
+  );
+}
+
+// ─── TurnOrder (next round) ───────────────────────────────────────────────────
+function TurnOrderNextRound({players,currentOrder,gameNum,onConfirm,onBack}){
+  const {t,lang}=useT();
+  const dir=lang==="he"?"rtl":"ltr";
+  // suggested: rotate +1
+  const suggested=currentOrder.map((_,i)=>currentOrder[(i+1)%currentOrder.length]);
+  const [editing,setEditing]=useState(false);
+  const [order,setOrder]=useState([]);
+
+  function toggle(idx){
+    if(order.includes(idx)){if(order[order.length-1]===idx)setOrder(o=>o.slice(0,-1));return;}
+    const newOrder=[...order,idx];
+    setOrder(newOrder);
+    if(newOrder.length===players.length-1){
+      const last=players.findIndex((_,i)=>!newOrder.includes(i));
+      setTimeout(()=>setOrder([...newOrder,last]),300);
+    }
+  }
+  const ready=!editing||order.length===players.length;
+  const finalOrder=editing?order.map(i=>players[i]):suggested;
+
+  return(
+    <div style={{minHeight:"100vh",background:"#0a0a0f",display:"flex",flexDirection:"column",
+      alignItems:"center",justifyContent:"center",fontFamily:"'Courier New',monospace",
+      direction:dir,padding:"20px",
+      backgroundImage:"linear-gradient(rgba(0,229,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.02) 1px,transparent 1px)",
+      backgroundSize:"40px 40px"}}>
+
+      <div style={{alignSelf:"flex-end",marginBottom:"8px"}}><LangToggle/></div>
+
+      <div style={{textAlign:"center",marginBottom:"24px"}}>
+        <div style={{color:"#FFD700",fontSize:"0.85rem",letterSpacing:"0.25em",marginBottom:"4px",opacity:0.7}}>
+          {lang==="he"?`משחק ${gameNum+1}`:`Game ${gameNum+1}`}
+        </div>
+        <div style={{color:"#FF6B35",fontSize:"1.1rem",fontWeight:"bold",letterSpacing:"0.15em"}}>
+          {editing
+            ?(lang==="he"?"בחר סדר חדש":"Choose new order")
+            :(lang==="he"?"סדר מוצע":"Suggested order")}
+        </div>
+      </div>
+
+      {/* Cards */}
+      <div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(players.length,2)},1fr)`,
+        gap:"12px",width:"100%",maxWidth:"400px",marginBottom:"24px"}}>
+        {(editing?players:suggested).map((p,i)=>{
+          const playerObj=editing?p:p;
+          const name=typeof playerObj==="string"?playerObj:playerObj.name;
+          const origIdx=players.findIndex(pl=>(pl.name||pl)===name);
+          const c=PLAYER_COLORS[origIdx>=0?origIdx:i];
+          const pos=editing?order.indexOf(origIdx):i;
+          const selected=editing?order.includes(origIdx):true;
+          return(
+            <div key={i}
+              onClick={editing?()=>toggle(origIdx):undefined}
+              style={{
+                background:`rgba(${rgb(c)},${editing&&!selected?0.03:0.12})`,
+                border:`2px solid ${editing&&!selected?"rgba(255,255,255,0.08)":c}`,
+                borderRadius:"16px",padding:"18px 16px",textAlign:"center",
+                cursor:editing?"pointer":"default",
+                opacity:editing&&selected&&pos!==order.length-1?0.5:1,
+                transition:"all 0.25s",
+                boxShadow:`0 0 ${editing&&!selected?0:20}px ${c}${editing&&!selected?"00":"30"}`,
+              }}>
+              <div style={{fontSize:"2rem",fontWeight:"bold",color:c,
+                textShadow:`0 0 16px ${c}`,lineHeight:1,marginBottom:"6px"}}>
+                {editing?(selected?pos+1:"?"):i+1}
+              </div>
+              <div style={{color:c,fontSize:"0.9rem",fontWeight:"bold",
+                overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Action buttons */}
+      {!editing?(
+        <div style={{display:"flex",gap:"10px",width:"100%",maxWidth:"400px"}}>
+          <button onClick={()=>{setEditing(true);setOrder([]);}} style={{
+            flex:1,padding:"14px",background:"rgba(255,255,255,0.04)",
+            border:"1px solid rgba(255,255,255,0.15)",borderRadius:"10px",
+            color:"#aaa",cursor:"pointer",fontFamily:"'Courier New',monospace",fontSize:"0.9rem",
+            letterSpacing:"0.1em"
+          }}>✎ {lang==="he"?"שנה סדר":"Change order"}</button>
+          <button onClick={()=>onConfirm(suggested)} style={{
+            flex:1,padding:"14px",background:"linear-gradient(135deg,#00E5FF,#A78BFA)",
+            border:"none",borderRadius:"10px",color:"#0a0a0f",
+            fontWeight:"bold",fontSize:"1rem",letterSpacing:"0.12em",
+            cursor:"pointer",fontFamily:"'Courier New',monospace",textTransform:"uppercase",
+            boxShadow:"0 0 25px rgba(0,229,255,0.4)"
+          }}>✓ {lang==="he"?"אישור":"Confirm"}</button>
+        </div>
+      ):(
+        <div style={{display:"flex",gap:"10px",width:"100%",maxWidth:"400px"}}>
+          <button onClick={()=>{setEditing(false);setOrder([]);}} style={{
+            padding:"14px 20px",background:"rgba(255,255,255,0.04)",
+            border:"1px solid rgba(255,255,255,0.12)",borderRadius:"10px",
+            color:"#aaa",cursor:"pointer",fontFamily:"'Courier New',monospace"
+          }}>←</button>
+          <button
+            onClick={()=>ready&&order.length===players.length&&onConfirm(order.map(i=>players[i]))}
+            disabled={order.length!==players.length}
+            style={{
+              flex:1,padding:"14px",
+              background:order.length===players.length?"linear-gradient(135deg,#FF6B35,#FF3CAC)":"rgba(255,255,255,0.04)",
+              border:"none",borderRadius:"10px",
+              color:order.length===players.length?"#fff":"#444",
+              fontWeight:"bold",fontSize:"1rem",letterSpacing:"0.12em",
+              cursor:order.length===players.length?"pointer":"default",
+              fontFamily:"'Courier New',monospace",textTransform:"uppercase",
+              boxShadow:order.length===players.length?"0 0 30px rgba(255,107,53,0.4)":"none",
+              transition:"all 0.3s"
+            }}>
+            {order.length===players.length?`🎯 ${lang==="he"?"התחל":"Start"}`:`${order.length}/${players.length}`}
+          </button>
+        </div>
+      )}
+      <style>{`@keyframes popIn{0%{transform:scale(0.5);opacity:0}70%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}`}</style>
+    </div>
+  );
+}
+
 // ─── Solo Setup ───────────────────────────────────────────────────────────────
 function SoloSetup({soloMode,onBack,onStart}){
   const {t,lang}=useT();const dir=lang==="he"?"rtl":"ltr";
@@ -914,12 +1172,49 @@ export default function App(){
   const [game,setGame]=useState(null);
   const t=T[lang];
 
+  function handleNextRound(prevGs,newGn,prevSs){
+    // rotate order: who was 2nd becomes 1st, etc.
+    const currentOrder=prevGs.map(p=>p); // same order as played
+    setGame(g=>({...g,orderedPlayers:currentOrder,gameNum:newGn,prevSs}));
+    setScreen("turnOrderNext");
+  }
+
   return(
     <I18nCtx.Provider value={{t,lang,setLang}}>
-      {screen==="home"&&<MainSetup onStart={(players,score)=>{setGame({players,score});setScreen("multi");}} onSolo={(mode)=>{setSoloMode(mode);setScreen("soloSetup");}} onKids={()=>setScreen("kidsSetup")}/>}
+      {screen==="home"&&<MainSetup
+        onStart={(players,score)=>{setGame({players,score,gameNum:1});setScreen("turnOrder");}}
+        onSolo={(mode)=>{setSoloMode(mode);setScreen("soloSetup");}}
+        onKids={()=>setScreen("kidsSetup")}/>}
+
+      {screen==="turnOrder"&&game&&<TurnOrder
+        players={game.players}
+        onBack={()=>setScreen("home")}
+        onConfirm={(ordered)=>{
+          setGame(g=>({...g,orderedPlayers:ordered}));
+          setScreen("multi");
+        }}/>}
+
+      {screen==="turnOrderNext"&&game&&<TurnOrderNextRound
+        players={game.orderedPlayers}
+        currentOrder={game.orderedPlayers}
+        gameNum={game.gameNum-1}
+        onBack={()=>setScreen("multi")}
+        onConfirm={(ordered)=>{
+          setGame(g=>({...g,orderedPlayers:ordered}));
+          setScreen("multiNext");
+        }}/>}
+
       {screen==="soloSetup"&&<SoloSetup soloMode={soloMode} onBack={()=>setScreen("home")} onStart={(score)=>{setGame({score});setScreen("solo");}}/>}
       {screen==="kidsSetup"&&<KidsSetup onBack={()=>setScreen("home")} onStart={(players,target,timer,balls)=>{setGame({players,target,timer,balls});setScreen("kids");}}/>}
-      {screen==="multi"&&game&&<MultiGame players={game.players} startScore={game.score} onReset={()=>setScreen("home")}/>}
+
+      {(screen==="multi"||screen==="multiNext")&&game&&<MultiGame
+        players={game.orderedPlayers||game.players}
+        startScore={game.score}
+        initialGn={game.gameNum||1}
+        initialSs={game.prevSs||null}
+        onReset={()=>setScreen("home")}
+        onNextRound={handleNextRound}/>}
+
       {screen==="solo"&&game&&<SoloGame soloMode={soloMode} startScore={game.score} onBack={()=>setScreen("home")}/>}
       {screen==="kids"&&game&&<KidsGame players={game.players} target={game.target} timerSecs={game.timer} ballsPerTurn={game.balls} onBack={()=>setScreen("home")}/>}
     </I18nCtx.Provider>

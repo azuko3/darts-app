@@ -140,7 +140,125 @@ const KIDS_TARGETS=[100,200,300,400];
 
 function rgb(hex){ return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`; }
 
-// ─── LangToggle ───────────────────────────────────────────────────────────────
+// ─── Checkout Table ───────────────────────────────────────────────────────────
+const CHECKOUTS = {
+  2:"D1",3:"D1 1... S1 D1",4:"D2",5:"S1 D2",6:"D3",7:"S3 D2",8:"D4",9:"S1 D4",10:"D5",
+  11:"S3 D4",12:"D6",13:"S5 D4",14:"D7",15:"S7 D4",16:"D8",17:"S9 D4",18:"D9",
+  19:"S11 D4",20:"D10",21:"S5 D8",22:"D11",23:"S7 D8",24:"D12",25:"S9 D8",
+  26:"D13",27:"S11 D8",28:"D14",29:"S13 D8",30:"D15",31:"S15 D8",32:"D16",
+  33:"S17 D8",34:"D17",35:"S19 D8",36:"D18",37:"S21 D8... S13 D12",38:"D19",
+  39:"S7 D16",40:"D20",41:"S9 D16",42:"D21... S10 D16",43:"S11 D16",44:"D22... S12 D16",
+  45:"S13 D16",46:"D23... S14 D16",47:"S15 D16",48:"D24... S16 D16",49:"S17 D16",
+  50:"D25 (Bull)",51:"S19 D16",52:"D26... S20 D16",53:"S21 D16",54:"S14 D20",
+  55:"S15 D20",56:"S16 D20",57:"S17 D20",58:"S18 D20",59:"S19 D20",60:"S20 D20",
+  61:"S21 D20... T7 D10",62:"S22 D20... T10 D16... S2 D30",63:"S23 D20... T7 D21",
+  64:"S24 D20... T8 D20",65:"S25 D20... T11 D16... S5 D30",66:"S26 D20... T10 D18",
+  67:"S27 D20... T9 D20... S7 D30",68:"S28 D20... T12 D16",69:"S29 D20... T11 D18... S9 D30",
+  70:"S30 D20... T10 D20... S10 D30",71:"S31 D20... T13 D16... S11 D30",
+  72:"S32 D20... T12 D18... S12 D30",73:"S33 D20... T11 D20... S13 D30",
+  74:"S34 D20... T14 D16... S14 D30",75:"S35 D20... T13 D18... S15 D30... T15 D15",
+  76:"S36 D20... T12 D20... S16 D30... T20 D8",77:"S37 D20... T15 D16... S17 D30",
+  78:"S38 D20... T14 D18... S18 D30... T18 D12",79:"S39 D20... T13 D20... S19 D30",
+  80:"S40 D20... T16 D16... S20 D30... T20 D10",81:"S41 D20... T15 D18... T19 D12... T11 D24",
+  82:"S42 D20... T14 D20... T18 D14... S22 D30",83:"S43 D20... T17 D16... T13 D22",
+  84:"S44 D20... T16 D18... T20 D12... T14 D21",85:"S45 D20... T15 D20... T19 D14... T11 D26",
+  86:"S46 D20... T16 D19... T18 D16... T14 D22",87:"S47 D20... T17 D18... T13 D24... T19 D15",
+  88:"S48 D20... T16 D20... T20 D14... T18 D17",89:"S49 D20... T19 D16... T15 D22... T13 D25",
+  90:"S50 D20... T18 D18... T20 D15... T14 D24",91:"T17 D20... T19 D17... T11 D29",
+  92:"T20 D16... T16 D22... T12 D28",93:"T19 D18... T17 D21... T11 D30",
+  94:"T18 D20... T14 D26... T16 D23",95:"T19 D19... T15 D25... T17 D22... Bull D25... T13 D28",
+  96:"T20 D18... T16 D24... T14 D27",97:"T19 D20... T17 D23... T15 D26",
+  98:"T20 D19... T18 D22... T16 D25... T14 D28",99:"T19 D21... T17 D24... T13 D30",
+  100:"T20 D20... T18 D23... T16 D26",101:"T17 D25... T19 D22... T15 D28",
+  102:"T20 D21... T18 D24... T16 D27",103:"T19 D23... T17 D26... T15 D29",
+  104:"T20 D22... T18 D25... T16 D28",105:"T19 D24... T17 D27... T15 D30... T20 D22.5... T20 Bull",
+  106:"T20 D23... T18 D26... T16 D29",107:"T19 D25... T17 D28... T15 D31...",
+  108:"T20 D24... T18 D27... T16 D30",109:"T20 D24.5... T19 D26... T17 D29",
+  110:"T20 D25... T18 D28... T16 D31... T19 D26.5... Bull D30",
+  111:"T19 D27... T17 D30... T20 D25.5",112:"T20 D26... T19 D27.5... T16 D32",
+  113:"T19 D28... T17 D31... T20 D26.5",114:"T20 D27... T18 D30... T19 D28.5",
+  115:"T19 D29... T17 D32... T20 D27.5... T15 Bull",116:"T20 D28... T19 D29.5... T18 D31",
+  117:"T20 D28.5... T19 D30... T17 D33",118:"T20 D29... T18 D32... T19 D30.5... Bull D34",
+  119:"T19 D31... T17 D34... T20 D29.5",120:"T20 D30... T18 D33... S20 Bull",
+  121:"T20 D30.5... T17 D35... T19 D32... S21 Bull... T11 Bull",
+  122:"T18 D34... T22... S22 Bull... T14 Bull... T20 D31",
+  123:"T19 D33... T17 D36... S23 Bull... T13 Bull",
+  124:"T20 D32... T18 D35... S24 Bull... T14 Bull",
+  125:"T18 D35.5... T17 D37... S25 Bull... T15 Bull... Bull D25 Bull... T20 D32.5",
+  126:"T19 D34.5... T18 D36... S26 Bull... T16 Bull",
+  127:"T20 D33.5... T19 D35... S27 Bull... T17 Bull",
+  128:"T18 D37... T20 D34... S28 Bull... T18 Bull",
+  129:"T19 D36... T17 D39... S29 Bull... T19 Bull",
+  130:"T20 D35... T18 D38... S30 Bull... T20 Bull",
+  131:"T20 D35.5... T19 D37... Bull Bull S1... T13 Bull D16",
+  132:"T20 D36... T19 D37.5... Bull Bull S2... T14 Bull D15",
+  133:"T20 D36.5... T19 D38... Bull Bull S3... T13 Bull D17",
+  134:"T20 D37... T18 D40... Bull Bull S4... T14 Bull D16",
+  135:"T20 D37.5... T19 D39... Bull Bull S5... T15 Bull D15",
+  136:"T20 D38... T18 D41... Bull Bull S6... T14 Bull D17",
+  137:"T20 D38.5... T19 D40... Bull Bull S7... T15 Bull D16",
+  138:"T20 D39... T18 D42... Bull Bull S8... T14 Bull D18... T22 D26",
+  139:"T20 D39.5... T19 D41... Bull Bull S9... T13 Bull D20",
+  140:"T20 D40... T18 D43... Bull Bull S10... T20 Bull D10... T16 Bull D14",
+  141:"T20 D40.5... T19 D42... Bull Bull S11... T17 Bull D15",
+  142:"T20 D41... T18 D44... Bull Bull S12... T14 Bull D20",
+  143:"T20 D41.5... T19 D43... Bull Bull S13... T17 Bull D16",
+  144:"T20 D42... T18 D45... Bull Bull S14... T20 Bull D12",
+  145:"T20 D42.5... T19 D44... Bull Bull S15... T19 Bull D14... T15 Bull D20",
+  146:"T20 D43... T18 D46... Bull Bull S16... T19 Bull D14.5",
+  147:"T20 D43.5... T19 D45... Bull Bull S17... T17 Bull D18",
+  148:"T20 D44... T18 D47... Bull Bull S18... T20 Bull D14",
+  149:"T20 D44.5... T19 D46... Bull Bull S19... T19 Bull D16",
+  150:"T20 D45... T18 D48... Bull Bull S20... T20 Bull D15... T16 Bull D19",
+  151:"T20 D45.5... T19 D47... Bull Bull S21... T17 Bull D20",
+  152:"T20 D46... T18 D49... Bull Bull S22... T20 Bull D16",
+  153:"T20 D46.5... T19 D48... Bull Bull S23... T19 Bull D18",
+  154:"T20 D47... T18 D50... Bull Bull S24... T18 Bull D20",
+  155:"T20 D47.5... T19 D49... Bull Bull S25... T19 Bull D19",
+  156:"T20 D48... T18 D51... Bull Bull S26... T20 Bull D18",
+  157:"T20 D48.5... T19 D50... Bull Bull S27... T19 Bull D20",
+  158:"T20 D49... T18 D52... Bull Bull S28... T20 Bull D19",
+  160:"T20 D50... T20 Bull D20... Bull Bull D30",
+  161:"T20 D50.5... T17 Bull D20... T20 Bull D20.5",
+  164:"T20 D52... T18 Bull D20... T20 Bull D22",
+  167:"T20 D53.5... T19 Bull D20... T20 Bull D23.5",
+  170:"T20 T20 Bull",
+};
+
+function CheckoutTip({score,color}){
+  const [open,setOpen]=useState(false);
+  if(score>170||score<2)return null;
+  const tip=CHECKOUTS[score];
+  if(!tip)return null;
+  // show only first suggestion (before "...")
+  const main=tip.split("...")[0].trim();
+  return(
+    <div style={{display:"inline-flex",alignItems:"center",gap:"6px",marginTop:"4px"}}>
+      <button
+        onClick={()=>setOpen(o=>!o)}
+        style={{background:"none",border:"none",cursor:"pointer",padding:"2px 4px",
+          fontSize:"1rem",lineHeight:1,opacity:0.8,transition:"opacity 0.2s"}}
+        title="Checkout tip"
+      >💡</button>
+      {open&&(
+        <span style={{
+          background:`rgba(${rgb(color)},0.15)`,
+          border:`1px solid ${color}40`,
+          borderRadius:"8px",padding:"3px 10px",
+          color,fontSize:"0.75rem",fontWeight:"bold",
+          fontFamily:"'Courier New',monospace",letterSpacing:"0.05em",
+          animation:"fadeInTip 0.2s ease"
+        }}>{main}</span>
+      )}
+      <style>{`@keyframes fadeInTip{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}`}</style>
+    </div>
+  );
+}
+
+// ─── History Reset ────────────────────────────────────────────────────────────
+function clearHistory(){ try{ localStorage.removeItem(LS_KEY); }catch{} }
+
+
 function LangToggle(){
   const {lang,setLang}=useT();
   return(
@@ -529,7 +647,8 @@ function SoloGame({soloMode,startScore,onBack}){
         {[false,true].map(isV=>(<button key={String(isV)} onClick={()=>{setVisual(isV);setPending([]);}} style={{padding:"8px 20px",background:visual===isV?color:"rgba(255,255,255,0.04)",border:`1px solid ${visual===isV?color:"rgba(255,255,255,0.12)"}`,borderRadius:"8px",color:visual===isV?"#0a0a0f":"#aaa",fontSize:"0.8rem",fontWeight:"bold",cursor:"pointer",fontFamily:"'Courier New',monospace",transition:"all 0.2s"}}>{isV?`🎯 ${t.mode_visual}`:`⌨️ ${t.mode_classic}`}</button>))}
       </div>
       <div style={{background:`rgba(${rgb(color)},0.08)`,border:`1px solid ${color}50`,borderRadius:"14px",padding:"16px",marginBottom:"16px"}}>
-        {visual?(<DartBoard playerColor={color} pendingDarts={pending} onScore={handleDart} onUndo={()=>setPending(p=>p.slice(0,-1))}/>):(<><div style={{display:"flex",gap:"10px",marginBottom:"14px"}}><input type="number" value={inputValue} onChange={e=>setInputValue(e.target.value)} onKeyDown={e=>e.key==="Enter"&&commit(parseInt(inputValue))} min="0" max="180" placeholder={t.enter_score} autoFocus style={{flex:1,background:"rgba(0,0,0,0.3)",border:`1px solid ${color}60`,borderRadius:"10px",padding:"14px 16px",color,fontSize:"1.4rem",fontFamily:"'Courier New',monospace",outline:"none",textAlign:"center",direction:"ltr"}}/><button onClick={()=>commit(parseInt(inputValue))} style={{background:color,border:"none",borderRadius:"10px",color:"#0a0a0f",fontWeight:"bold",fontSize:"1rem",padding:"14px 20px",cursor:"pointer",fontFamily:"'Courier New',monospace",boxShadow:`0 0 20px ${color}50`,flexShrink:0}}>{t.confirm}</button></div><div style={{display:"flex",flexWrap:"wrap",gap:"6px",justifyContent:"center"}}>{quickScores.map(s=>(<button key={s} onClick={()=>setInputValue(String(s))} style={{background:inputValue===String(s)?color:`rgba(${rgb(color)},0.15)`,border:`1px solid ${color}40`,borderRadius:"6px",color:inputValue===String(s)?"#0a0a0f":color,padding:"5px 10px",fontSize:"0.8rem",cursor:"pointer",fontFamily:"'Courier New',monospace",fontWeight:"bold"}}>{s}</button>))}</div></>)}
+        {soloMode!=="clock"&&<div style={{textAlign:"center",marginBottom:"8px"}}><CheckoutTip score={score} color={color}/></div>}
+        {visual?(<DartBoard playerColor={color} pendingDarts={pending} onScore={handleDart} onUndo={()=>setPending(p=>p.slice(0,-1))}/>):(<><div style={{display:"flex",gap:"10px",marginBottom:"14px"}}><input type="number" value={inputValue} onChange={e=>setInputValue(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){const v=parseInt(inputValue);setInputValue("");commit(v);}}} min="0" max="180" placeholder={t.enter_score} autoFocus style={{flex:1,background:"rgba(0,0,0,0.3)",border:`1px solid ${color}60`,borderRadius:"10px",padding:"14px 16px",color,fontSize:"1.4rem",fontFamily:"'Courier New',monospace",outline:"none",textAlign:"center",direction:"ltr"}}/><button onClick={()=>{const v=parseInt(inputValue);setInputValue("");commit(v);}} style={{background:color,border:"none",borderRadius:"10px",color:"#0a0a0f",fontWeight:"bold",fontSize:"1rem",padding:"14px 20px",cursor:"pointer",fontFamily:"'Courier New',monospace",boxShadow:`0 0 20px ${color}50`,flexShrink:0}}>{t.confirm}</button></div><div style={{display:"flex",flexWrap:"wrap",gap:"6px",justifyContent:"center"}}>{quickScores.map(s=>(<button key={s} onClick={()=>setInputValue(String(s))} style={{background:inputValue===String(s)?color:`rgba(${rgb(color)},0.15)`,border:`1px solid ${color}40`,borderRadius:"6px",color:inputValue===String(s)?"#0a0a0f":color,padding:"5px 10px",fontSize:"0.8rem",cursor:"pointer",fontFamily:"'Courier New',monospace",fontWeight:"bold"}}>{s}</button>))}</div></>)}
       </div>
       {rounds.length>=3&&(<div style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"12px",padding:"12px 14px"}}><div style={{color:"#444",fontSize:"0.7rem",letterSpacing:"0.15em",marginBottom:"8px"}}>📈 {t.progress_chart}</div><ProgressChart history={rounds} color={color}/></div>)}
       <style>{`@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}input[type=number]{-moz-appearance:textfield}`}</style>
@@ -696,6 +815,10 @@ function MainSetup({onStart,onSolo,onKids}){
                 <div style={{fontSize:"0.72rem",color:`${c}60`}}>{t[`solo_${mode}_desc`]}</div>
               </button>
             );})}
+            {/* History reset */}
+            <button onClick={()=>{if(window.confirm(lang==="he"?"למחוק את כל היסטוריית המשחקים?":"Clear all game history?")){clearHistory();setShowMore(false);}}} style={{padding:"10px 16px",background:"rgba(255,60,172,0.06)",border:"1px solid rgba(255,60,172,0.2)",borderRadius:"12px",color:"rgba(255,60,172,0.6)",cursor:"pointer",fontFamily:"'Courier New',monospace",fontSize:"0.75rem",letterSpacing:"0.1em"}}>
+              🗑️ {lang==="he"?"מחק היסטוריית משחקים":"Clear game history"}
+            </button>
           </div>
         )}
       </div>
@@ -767,7 +890,8 @@ function MultiGame({players,startScore,onReset}){
         {[false,true].map(isV=>(<button key={String(isV)} onClick={()=>{setVis(isV);setPend([]);}} style={{padding:"8px 20px",background:vis===isV?cp.color:"rgba(255,255,255,0.04)",border:`1px solid ${vis===isV?cp.color:"rgba(255,255,255,0.12)"}`,borderRadius:"8px",color:vis===isV?"#0a0a0f":"#aaa",fontSize:"0.8rem",fontWeight:"bold",cursor:"pointer",fontFamily:"'Courier New',monospace",letterSpacing:"0.1em",boxShadow:vis===isV?`0 0 12px ${cp.color}40`:"none",transition:"all 0.2s"}}>{isV?`🎯 ${t.mode_visual}`:`⌨️ ${t.mode_classic}`}</button>))}
       </div>
       <div style={{background:`rgba(${rgb(cp.color)},0.08)`,border:`1px solid ${cp.color}50`,borderRadius:"14px",padding:"16px",marginBottom:"16px"}}>
-        <div style={{color:cp.color,fontSize:"0.8rem",letterSpacing:"0.15em",marginBottom:"12px",textAlign:"center"}}>🎯 {cp.name} — {t.remaining}: <strong>{cp.score}</strong></div>
+        <div style={{color:cp.color,fontSize:"0.8rem",letterSpacing:"0.15em",marginBottom:"4px",textAlign:"center"}}>🎯 {cp.name} — {t.remaining}: <strong>{cp.score}</strong></div>
+        <div style={{textAlign:"center",marginBottom:"8px"}}><CheckoutTip score={cp.score} color={cp.color}/></div>
         {vis?(<DartBoard playerColor={cp.color} pendingDarts={pend} onScore={handleDart} onUndo={()=>setPend(p=>p.slice(0,-1))}/>):(<><div style={{display:"flex",gap:"10px",marginBottom:"14px"}}><input type="number" value={iv} onChange={e=>setIv(e.target.value)} onKeyDown={e=>e.key==="Enter"&&commitFromInput()} min="0" max="180" placeholder={t.enter_score} autoFocus style={{flex:1,background:"rgba(0,0,0,0.3)",border:`1px solid ${cp.color}60`,borderRadius:"10px",padding:"14px 16px",color:cp.color,fontSize:"1.4rem",fontFamily:"'Courier New',monospace",outline:"none",textAlign:"center",direction:"ltr"}}/><button onClick={commitFromInput} style={{background:cp.color,border:"none",borderRadius:"10px",color:"#0a0a0f",fontWeight:"bold",fontSize:"1rem",padding:"14px 20px",cursor:"pointer",fontFamily:"'Courier New',monospace",boxShadow:`0 0 20px ${cp.color}50`,flexShrink:0}}>{t.confirm}</button></div><div style={{display:"flex",flexWrap:"wrap",gap:"6px",justifyContent:"center"}}>{qsc.map(s=>(<button key={s} onClick={()=>setIv(String(s))} style={{background:iv===String(s)?cp.color:`rgba(${rgb(cp.color)},0.15)`,border:`1px solid ${cp.color}40`,borderRadius:"6px",color:iv===String(s)?"#0a0a0f":cp.color,padding:"5px 10px",fontSize:"0.8rem",cursor:"pointer",fontFamily:"'Courier New',monospace",fontWeight:"bold"}}>{s}</button>))}</div></>)}
       </div>
       <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"12px",padding:"14px",overflowX:"auto"}}>

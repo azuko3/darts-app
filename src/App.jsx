@@ -58,7 +58,7 @@ function Confetti(){
 // ─── i18n ────────────────────────────────────────────────────────────────────
 const T={
   he:{
-    title:"מנהל משחק", num_players:"מספר שחקנים", starting_score:"ניקוד התחלתי",
+    title:"Darts Lovers", num_players:"מספר שחקנים", starting_score:"ניקוד התחלתי",
     player_names:"שמות שחקנים", player_default:(n)=>`שחקן ${n}`, start_game:"התחל משחק",
     your_turn:"תורך", remaining:"נשאר", enter_score:"הזן ניקוד...", confirm:"✓ אישור",
     stats:"סטטיסטיקות", col_player:"שחקן", col_remaining:"נשאר", col_avg:"ממוצע",
@@ -93,7 +93,7 @@ const T={
     back:"חזור",
   },
   en:{
-    title:"Game Manager", num_players:"Number of Players", starting_score:"Starting Score",
+    title:"Darts Lovers", num_players:"Number of Players", starting_score:"Starting Score",
     player_names:"Player Names", player_default:(n)=>`Player ${n}`, start_game:"Start Game",
     your_turn:"Your Turn", remaining:"Remaining", enter_score:"Enter score...", confirm:"✓ Confirm",
     stats:"Statistics", col_player:"Player", col_remaining:"Left", col_avg:"Avg",
@@ -561,7 +561,7 @@ function SoloSummary({result,soloMode,onNewGame,onBack}){
     <div style={{minHeight:"100vh",background:"#0a0a0f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",fontFamily:"'Courier New',monospace",direction:lang==="he"?"rtl":"ltr",padding:"20px",paddingTop:"40px"}}>
       <div style={{alignSelf:"flex-end",marginBottom:"8px"}}><LangToggle/></div>
       {result.newRecord&&<div style={{color:"#FFD700",fontSize:"1.2rem",fontWeight:"bold",letterSpacing:"0.2em",marginBottom:"16px",animation:"pulse 1s ease infinite"}}>{t.new_record}</div>}
-      <div style={{fontSize:"64px",marginBottom:"8px"}}>{soloMode==="clock"?"⏱️":soloMode==="challenge"?"🏆":"🎯"}</div>
+      <div style={{fontSize:"64px",marginBottom:"8px"}}>{soloMode==="clock"?"⏱️":soloMode==="challenge"?"🏆":"💘"}</div>
       <div style={{color:color,fontSize:"clamp(2rem,8vw,3.5rem)",fontWeight:"bold",textShadow:`0 0 30px ${color}`,marginBottom:"24px"}}>
         {soloMode==="challenge"?`${result.dartsTotal} 🎯`:soloMode==="clock"?`${result.finalScore} pts`:t.game_over}
       </div>
@@ -727,8 +727,8 @@ function MainSetup({onStart,onSolo,onKids}){
       <div style={{alignSelf:"flex-end",marginBottom:"8px"}}><LangToggle/></div>
 
       <div style={{marginBottom:"24px",textAlign:"center"}}>
-        <div style={{fontSize:"56px",marginBottom:"8px"}}>🎯</div>
-        <h1 style={{fontSize:"clamp(2rem,5vw,3rem)",color:"#FF6B35",margin:0,letterSpacing:"0.15em",textShadow:"0 0 30px #FF6B35",textTransform:"uppercase"}}>DARTS</h1>
+        <div style={{fontSize:"64px",marginBottom:"8px"}}>💘</div>
+        <h1 style={{fontSize:"clamp(1.8rem,5vw,2.8rem)",color:"#FF6B35",margin:0,letterSpacing:"0.1em",textShadow:"0 0 30px #FF6B35",textTransform:"uppercase"}}>Darts Lovers</h1>
       </div>
 
       <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,107,53,0.3)",borderRadius:"16px",padding:"clamp(20px,5vw,36px)",width:"100%",maxWidth:"480px"}}>
@@ -846,7 +846,7 @@ function MultiGame({players,startScore,onReset,onNextRound,initialGn,initialSs})
       {editing!==null&&<EditModal player={gs[editing]} onSave={editSave} onClose={()=>setEditing(null)}/>}
       {notif&&<div style={{position:"fixed",top:"20px",left:"50%",transform:"translateX(-50%)",background:"#0a0a0f",border:`1px solid ${notif.c}`,borderRadius:"10px",padding:"12px 28px",color:notif.c,fontWeight:"bold",fontSize:"1.2rem",letterSpacing:"0.1em",zIndex:100,boxShadow:`0 0 30px ${notif.c}50`,animation:"fadeIn 0.3s ease"}}>{notif.msg}</div>}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
-        <span style={{color:"#FF6B35",fontSize:"1.3rem",fontWeight:"bold",letterSpacing:"0.1em"}}>🎯 DARTS</span>
+        <span style={{color:"#FF6B35",fontSize:"1.1rem",fontWeight:"bold",letterSpacing:"0.05em"}}>💘 Darts Lovers</span>
         <div style={{color:"#666",fontSize:"0.8rem",textAlign:"center"}}><div>{t.game} {gn}</div><div style={{fontSize:"0.7rem",opacity:0.6}}>{t.round} {rn}</div></div>
         <div style={{display:"flex",gap:"8px",alignItems:"center"}}><LangToggle/><button onClick={onReset} style={{background:"rgba(255,60,172,0.1)",border:"1px solid rgba(255,60,172,0.3)",borderRadius:"8px",color:"#FF3CAC",padding:"6px 12px",cursor:"pointer",fontSize:"0.8rem",fontFamily:"'Courier New',monospace"}}>✕ {t.end}</button></div>
       </div>
@@ -913,7 +913,7 @@ function TurnOrder({players,suggestedOrder,onConfirm,onBack}){
 
       {/* Title */}
       <div style={{textAlign:"center",marginBottom:"32px"}}>
-        <div style={{fontSize:"40px",marginBottom:"8px"}}>🎯</div>
+        <div style={{fontSize:"40px",marginBottom:"8px"}}>💘</div>
         <div style={{color:"#FF6B35",fontSize:"1.1rem",fontWeight:"bold",letterSpacing:"0.2em",marginBottom:"4px"}}>
           {lang==="he"?"מי מתחיל?":"Who goes first?"}
         </div>
@@ -1139,7 +1139,7 @@ function TurnOrderNextRound({players,currentOrder,gameNum,onConfirm,onBack}){
 function SoloSetup({soloMode,onBack,onStart}){
   const {t,lang}=useT();const dir=lang==="he"?"rtl":"ltr";
   const [sc,setSc]=useState(501);
-  const icon=soloMode==="practice"?"🎯":soloMode==="challenge"?"🏆":"⏱️";
+  const icon=soloMode==="practice"?"💘":soloMode==="challenge"?"🏆":"⏱️";
   return(
     <div style={{minHeight:"100vh",background:"#0a0a0f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Courier New',monospace",direction:dir,padding:"20px"}}>
       <div style={{alignSelf:"flex-end",marginBottom:"8px"}}><LangToggle/></div>

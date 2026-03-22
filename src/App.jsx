@@ -560,7 +560,7 @@ function SoloSummary({result,soloMode,onNewGame,onBack}){
   const color="#FF6B35";
   return(
     <div style={{minHeight:"100vh",background:"#0a0a0f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",fontFamily:"'Courier New',monospace",direction:lang==="he"?"rtl":"ltr",padding:"20px",paddingTop:"40px"}}>
-      <div style={{alignSelf:"flex-end",marginBottom:"8px"}}><LangToggle/></div>
+      <div style={{position:"fixed",top:"12px",right:"12px",zIndex:50}}><LangToggle/></div>
       {result.newRecord&&<div style={{color:"#FFD700",fontSize:"1.2rem",fontWeight:"bold",letterSpacing:"0.2em",marginBottom:"16px",animation:"pulse 1s ease infinite"}}>{t.new_record}</div>}
       <div style={{fontSize:"64px",marginBottom:"8px"}}>{soloMode==="clock"?"⏱️":soloMode==="challenge"?"🏆":"💘"}</div>
       <div style={{color:color,fontSize:"clamp(2rem,8vw,3.5rem)",fontWeight:"bold",textShadow:`0 0 30px ${color}`,marginBottom:"24px"}}>
@@ -670,7 +670,7 @@ function KidsSetup({onStart,onBack}){
   const finalTarget=customTarget?parseInt(customTarget):target;
   return(
     <div style={{minHeight:"100vh",background:"#0a0a0f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Courier New',monospace",direction:dir,padding:"20px"}}>
-      <div style={{alignSelf:"flex-end",marginBottom:"8px"}}><LangToggle/></div>
+      <div style={{position:"fixed",top:"12px",right:"12px",zIndex:50}}><LangToggle/></div>
       <div style={{marginBottom:"24px",textAlign:"center"}}>
         <div style={{fontSize:"56px",marginBottom:"8px"}}>🎈</div>
         <h1 style={{fontSize:"clamp(1.5rem,4vw,2.5rem)",color:"#FFD700",margin:0,letterSpacing:"0.15em",textShadow:"0 0 30px #FFD700",textTransform:"uppercase"}}>{t.kids_mode}</h1>
@@ -795,7 +795,7 @@ function MainSetup({onStart,onSolo,onKids}){
           frame();
         }} style={{position:"absolute",inset:0,width:"100%",height:"100%"}}/>
       </div>
-      <div style={{alignSelf:"flex-end",marginBottom:"8px"}}><LangToggle/></div>
+      <div style={{position:"fixed",top:"12px",right:"12px",zIndex:50}}><LangToggle/></div>
 
       <div style={{marginBottom:"24px",textAlign:"center"}}>
         <div style={{fontSize:"64px",marginBottom:"8px"}}>💘</div>
@@ -929,7 +929,7 @@ function MultiGame({players,startScore,onReset,onNextRound,initialGn,initialSs,p
 
   if(winner){const ow=[...ss].sort((a,b)=>b.wins-a.wins)[0];return(
     <div style={{minHeight:"100vh",background:"#0a0a0f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Courier New',monospace",direction:dir,padding:"20px"}}>
-      <div style={{alignSelf:"flex-end",marginBottom:"8px"}}><LangToggle/></div>
+      <div style={{position:"fixed",top:"12px",right:"12px",zIndex:50}}><LangToggle/></div>
       <div style={{textAlign:"center",animation:"pulse 1s ease infinite"}}><div style={{fontSize:"80px",marginBottom:"16px"}}>🏆</div><div style={{color:"#FFD700",fontSize:"clamp(1rem,4vw,1.3rem)",letterSpacing:"0.3em",marginBottom:"8px"}}>{t.checkout_label} {gn}</div><div style={{fontSize:"clamp(2rem,8vw,4rem)",color:"#FF6B35",textShadow:"0 0 40px #FF6B35",fontWeight:"bold",marginBottom:"16px"}}>{winner}</div><div style={{color:"#00E5FF",fontSize:"1.1rem",marginBottom:"32px",opacity:0.8}}>{t.won}</div></div>
       <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,215,0,0.3)",borderRadius:"16px",padding:"20px",width:"100%",maxWidth:"600px",marginBottom:"16px",overflowX:"auto"}}>
         <div style={{color:"#FFD700",fontSize:"0.75rem",letterSpacing:"0.2em",marginBottom:"12px"}}>{t.game_summary(gn)}</div>
@@ -1186,7 +1186,7 @@ function TurnOrder({players,suggestedOrder,onConfirm,onBack}){
       backgroundImage:"linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px)",
       backgroundSize:"40px 40px"}}>
 
-      <div style={{alignSelf:"flex-end",marginBottom:"8px"}}><LangToggle/></div>
+      <div style={{position:"fixed",top:"12px",right:"12px",zIndex:50}}><LangToggle/></div>
 
       {/* Title */}
       <div style={{textAlign:"center",marginBottom:"32px"}}>
@@ -1319,7 +1319,7 @@ function TurnOrderNextRound({players,currentOrder,gameNum,onConfirm,onBack}){
       backgroundImage:"linear-gradient(rgba(0,229,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.02) 1px,transparent 1px)",
       backgroundSize:"40px 40px"}}>
 
-      <div style={{alignSelf:"flex-end",marginBottom:"8px"}}><LangToggle/></div>
+      <div style={{position:"fixed",top:"12px",right:"12px",zIndex:50}}><LangToggle/></div>
 
       <div style={{textAlign:"center",marginBottom:"24px"}}>
         <div style={{color:"#FFD700",fontSize:"0.85rem",letterSpacing:"0.25em",marginBottom:"4px",opacity:0.7}}>
@@ -1419,7 +1419,7 @@ function SoloSetup({soloMode,onBack,onStart}){
   const icon=soloMode==="practice"?"💘":soloMode==="challenge"?"🏆":"⏱️";
   return(
     <div style={{minHeight:"100vh",background:"#0a0a0f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Courier New',monospace",direction:dir,padding:"20px"}}>
-      <div style={{alignSelf:"flex-end",marginBottom:"8px"}}><LangToggle/></div>
+      <div style={{position:"fixed",top:"12px",right:"12px",zIndex:50}}><LangToggle/></div>
       <div style={{marginBottom:"24px",textAlign:"center"}}>
         <div style={{fontSize:"56px",marginBottom:"8px"}}>{icon}</div>
         <h2 style={{color:"#FF6B35",margin:0,letterSpacing:"0.15em",textShadow:"0 0 20px #FF6B35",textTransform:"uppercase"}}>{t[`solo_${soloMode}`]}</h2>
@@ -1443,7 +1443,8 @@ function SoloSetup({soloMode,onBack,onStart}){
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 export default function App(){
-  const [lang,setLang]=useState("he");
+  const [lang,setLang]=useState(()=>localStorage.getItem("darts_lang")||"he");
+  useEffect(()=>localStorage.setItem("darts_lang",lang),[lang]);
   const [screen,setScreen]=useState("home");
   const [soloMode,setSoloMode]=useState(null);
   const [game,setGame]=useState(null);

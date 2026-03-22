@@ -1096,7 +1096,7 @@ function NumPad({expr,onExprChange,onConfirm,onUndo,color,lastRound}){
           );
         })}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:hasUndo?"2fr 1fr":"1fr",gap:"8px",marginTop:"2px"}}>
+      <div style={{display:"grid",gridTemplateColumns:hasUndo?"1fr 2fr":"1fr",gap:"8px",marginTop:"2px"}}>
         {hasUndo&&(
           <button onClick={onUndo} style={{padding:"16px",background:"rgba(255,255,255,0.04)",
             border:"1px solid rgba(255,255,255,0.15)",borderRadius:"10px",

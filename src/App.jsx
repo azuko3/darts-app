@@ -59,7 +59,7 @@ function Confetti(){
 const T={
   he:{
     title:"Darts Lovers", num_players:"מספר שחקנים", starting_score:"ניקוד התחלתי",
-    player_names:"שמות שחקנים", player_default:(n)=>`שחקן ${n}`, start_game:"התחל משחק",
+    player_names:"שמות שחקנים", player_default:(n)=>PLAYER_EMOJIS[n-1], start_game:"התחל משחק",
     your_turn:"תורך", remaining:"נשאר", enter_score:"הזן ניקוד...", confirm:"✓ אישור",
     stats:"סטטיסטיקות", col_player:"שחקן", col_remaining:"נשאר", col_avg:"ממוצע",
     col_high:"שיא", col_busts:"חריגות", col_rounds:"סבבים", col_darts:"דארטים",
@@ -94,7 +94,7 @@ const T={
   },
   en:{
     title:"Darts Lovers", num_players:"Number of Players", starting_score:"Starting Score",
-    player_names:"Player Names", player_default:(n)=>`Player ${n}`, start_game:"Start Game",
+    player_names:"Player Names", player_default:(n)=>PLAYER_EMOJIS[n-1], start_game:"Start Game",
     your_turn:"Your Turn", remaining:"Remaining", enter_score:"Enter score...", confirm:"✓ Confirm",
     stats:"Statistics", col_player:"Player", col_remaining:"Left", col_avg:"Avg",
     col_high:"Best", col_busts:"Busts", col_rounds:"Rounds", col_darts:"Darts",
@@ -132,6 +132,7 @@ const T={
 const I18nCtx=createContext();
 const useT=()=>useContext(I18nCtx);
 
+const PLAYER_EMOJIS=["🐯","🦁","🐻","🦊"];
 const STARTING_SCORES=[301,501,701];
 const PLAYER_COLORS=["#FF6B35","#00E5FF","#B9FF66","#FF3CAC","#FFD700","#A78BFA"];
 const BOARD_NUMS=[20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
@@ -742,10 +743,17 @@ function MainSetup({onStart,onSolo,onKids}){
   const {t,lang}=useT();const dir=lang==="he"?"rtl":"ltr";
   const [playerCount,setPlayerCount]=useState(2);
   const [startScore,setStartScore]=useState(501);
-  const [names,setNames]=useState(Array.from({length:4},(_,i)=>T.he.player_default(i+1)));
+  const [names,setNames]=useState(Array.from({length:4},(_,i)=>PLAYER_EMOJIS[i]));
   const [showMore,setShowMore]=useState(false);
+  const [proMode,setProMode]=useState(false);
+  const [proTip,setProTip]=useState(false);
   const upd=(i,v)=>{const n=[...names];n[i]=v;setNames(n);};
   const SOLO_MODES=["practice","challenge","clock"];
+
+  function togglePro(){
+    if(!proMode){setProTip(true);setTimeout(()=>setProTip(false),3000);}
+    setProMode(p=>!p);
+  }
 
   return(
     <div style={{minHeight:"100vh",background:"#0a0a0f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Courier New',monospace",direction:dir,padding:"20px"}}>
@@ -767,12 +775,33 @@ function MainSetup({onStart,onSolo,onKids}){
           </div>
         </div>
 
-        {/* Starting score */}
+        {/* Starting score + Pro */}
         <div style={{marginBottom:"22px"}}>
           <label style={{color:"#00E5FF",fontSize:"0.8rem",letterSpacing:"0.2em",display:"block",marginBottom:"12px"}}>{t.starting_score}</label>
-          <div style={{display:"flex",gap:"10px"}}>
+          <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
             {STARTING_SCORES.map(s=>(<button key={s} onClick={()=>setStartScore(s)} style={{flex:1,padding:"12px 8px",background:startScore===s?"#00E5FF":"rgba(0,229,255,0.1)",border:`1px solid ${startScore===s?"#00E5FF":"rgba(0,229,255,0.3)"}`,borderRadius:"8px",color:startScore===s?"#0a0a0f":"#00E5FF",fontSize:"1rem",fontWeight:"bold",cursor:"pointer",fontFamily:"'Courier New',monospace"}}>{s}</button>))}
+            <div style={{width:"1px",height:"36px",background:"rgba(255,255,255,0.1)",flexShrink:0}}/>
+            <button onClick={togglePro} style={{
+              padding:"10px 14px",flexShrink:0,
+              background:proMode?"#FFD700":"rgba(255,215,0,0.08)",
+              border:`1px solid ${proMode?"#FFD700":"rgba(255,215,0,0.2)"}`,
+              borderRadius:"8px",color:proMode?"#0a0a0f":"rgba(255,215,0,0.5)",
+              fontSize:"0.75rem",fontWeight:"bold",cursor:"pointer",
+              fontFamily:"'Courier New',monospace",letterSpacing:"0.1em",
+              transition:"all 0.2s",
+            }}>PRO</button>
           </div>
+          {/* Pro tip popup */}
+          {proTip&&(
+            <div style={{
+              marginTop:"8px",padding:"8px 14px",
+              background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.3)",
+              borderRadius:"8px",color:"#FFD700",fontSize:"0.75rem",
+              animation:"fadeIn 0.2s ease",
+            }}>
+              {lang==="he"?"🏆 מצב פרו — הזריקה האחרונה חייבת לנחות על Double":"🏆 Pro mode — last dart must land on a Double"}
+            </div>
+          )}
         </div>
 
         {/* Player names */}
@@ -789,7 +818,7 @@ function MainSetup({onStart,onSolo,onKids}){
         </div>
 
         {/* Start button */}
-        <button onClick={()=>onStart(names.slice(0,playerCount),startScore)} style={{width:"100%",padding:"16px",background:"linear-gradient(135deg,#FF6B35,#FF3CAC)",border:"none",borderRadius:"10px",color:"#fff",fontSize:"1.1rem",fontWeight:"bold",letterSpacing:"0.2em",cursor:"pointer",fontFamily:"'Courier New',monospace",textTransform:"uppercase",boxShadow:"0 0 30px rgba(255,107,53,0.4)",marginBottom:"12px"}}
+        <button onClick={()=>onStart(names.slice(0,playerCount),startScore,proMode)} style={{width:"100%",padding:"16px",background:"linear-gradient(135deg,#FF6B35,#FF3CAC)",border:"none",borderRadius:"10px",color:"#fff",fontSize:"1.1rem",fontWeight:"bold",letterSpacing:"0.2em",cursor:"pointer",fontFamily:"'Courier New',monospace",textTransform:"uppercase",boxShadow:"0 0 30px rgba(255,107,53,0.4)",marginBottom:"12px"}}
           onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}>
           🎯 {t.start_game}
         </button>
@@ -826,7 +855,7 @@ function MainSetup({onStart,onSolo,onKids}){
 }
 
 // ─── Multi Game ───────────────────────────────────────────────────────────────
-function MultiGame({players,startScore,onReset,onNextRound,initialGn,initialSs}){
+function MultiGame({players,startScore,onReset,onNextRound,initialGn,initialSs,proMode}){
   const {t,lang}=useT();const dir=lang==="he"?"rtl":"ltr";
   const initP=()=>players.map((p,i)=>({name:p.name||p,color:PLAYER_COLORS[i],score:startScore,rounds:[],darts:0,highRound:0,busts:0}));
   const initS=()=>initialSs||players.map((p,i)=>({name:p.name||p,color:PLAYER_COLORS[i],wins:0,totalDarts:0,totalScore:0,totalRounds:0,allHighRound:0,totalBusts:0}));
@@ -835,6 +864,17 @@ function MultiGame({players,startScore,onReset,onNextRound,initialGn,initialSs})
   function commit(val,du=3){
     if(isNaN(val)||val<0||val>180){showN(t.invalid_score,"#FF3CAC");return;}
     const upd=[...gs];const p={...upd[cur]};const ns=p.score-val;
+    // pro mode: checkout must end on a double
+    if(proMode&&ns===0){
+      const isDouble=CHECKOUTS[p.score]&&CHECKOUTS[p.score].includes("D");
+      // check if value matches a valid double-out checkout
+      const validDoubleOut=Object.entries(CHECKOUTS).some(([k,v])=>parseInt(k)===p.score&&v.includes("D"));
+      if(!validDoubleOut||(val%2!==0&&val!==50)){
+        p.busts+=1;showN(lang==="he"?"❌ חייב לסיים על Double!":"❌ Must finish on Double!","#FF3CAC");
+        upd[cur]=p;setGs(upd);setExpr("");setPend([]);
+        const next=(cur+1)%players.length;if(next===0)setRn(r=>r+1);setCur(next);return;
+      }
+    }
     if(ns<0){p.busts+=1;showN(t.bust(p.name,p.score),"#FF3CAC");}
     else if(ns===0){p.score=0;p.rounds=[...p.rounds,val];p.darts+=du;if(val>p.highRound)p.highRound=val;upd[cur]=p;setGs(upd);setSs(prev=>prev.map((s,idx)=>{const gp=idx===cur?p:upd[idx];return{...s,wins:s.wins+(idx===cur?1:0),totalDarts:s.totalDarts+gp.darts,totalScore:s.totalScore+gp.rounds.reduce((a,b)=>a+b,0),totalRounds:s.totalRounds+gp.rounds.length,allHighRound:Math.max(s.allHighRound,gp.highRound),totalBusts:s.totalBusts+gp.busts};}));setWinner(p.name);return;}
     else{p.score=ns;p.rounds=[...p.rounds,val];p.darts+=du;if(val>p.highRound)p.highRound=val;if(val===180)showN("🔥 MAX! 180!","#FFD700");else if(val>=100)showN(`⚡ ${val}!`,"#B9FF66");}
@@ -877,7 +917,11 @@ function MultiGame({players,startScore,onReset,onNextRound,initialGn,initialSs})
       {notif&&<div style={{position:"fixed",top:"20px",left:"50%",transform:"translateX(-50%)",background:"#0a0a0f",border:`1px solid ${notif.c}`,borderRadius:"10px",padding:"12px 28px",color:notif.c,fontWeight:"bold",fontSize:"1.2rem",letterSpacing:"0.1em",zIndex:100,boxShadow:`0 0 30px ${notif.c}50`,animation:"fadeIn 0.3s ease"}}>{notif.msg}</div>}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
         <span style={{color:"#FF6B35",fontSize:"1.1rem",fontWeight:"bold",letterSpacing:"0.05em"}}>💘 Darts Lovers</span>
-        <div style={{color:"#666",fontSize:"0.8rem",textAlign:"center"}}><div>{t.game} {gn}</div><div style={{fontSize:"0.7rem",opacity:0.6}}>{t.round} {rn}</div></div>
+        <div style={{color:"#666",fontSize:"0.8rem",textAlign:"center"}}>
+          <div>{t.game} {gn}</div>
+          <div style={{fontSize:"0.7rem",opacity:0.6}}>{t.round} {rn}</div>
+          {proMode&&<div style={{color:"#FFD700",fontSize:"0.6rem",letterSpacing:"0.1em",marginTop:"2px"}}>PRO</div>}
+        </div>
         <div style={{display:"flex",gap:"8px",alignItems:"center"}}><LangToggle/><button onClick={onReset} style={{background:"rgba(255,60,172,0.1)",border:"1px solid rgba(255,60,172,0.3)",borderRadius:"8px",color:"#FF3CAC",padding:"6px 12px",cursor:"pointer",fontSize:"0.8rem",fontFamily:"'Courier New',monospace"}}>✕ {t.end}</button></div>
       </div>
       <div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(gs.length,4)},1fr)`,gap:"10px",marginBottom:"16px"}}>
@@ -1052,7 +1096,7 @@ function NumPad({expr,onExprChange,onConfirm,onUndo,color,lastRound}){
           );
         })}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:hasUndo?"1fr 1fr":"1fr",gap:"8px",marginTop:"2px"}}>
+      <div style={{display:"grid",gridTemplateColumns:hasUndo?"2fr 1fr":"1fr",gap:"8px",marginTop:"2px"}}>
         {hasUndo&&(
           <button onClick={onUndo} style={{padding:"16px",background:"rgba(255,255,255,0.04)",
             border:"1px solid rgba(255,255,255,0.15)",borderRadius:"10px",
@@ -1378,7 +1422,7 @@ export default function App(){
   return(
     <I18nCtx.Provider value={{t,lang,setLang}}>
       {screen==="home"&&<MainSetup
-        onStart={(players,score)=>{setGame({players,score,gameNum:1});setScreen("turnOrder");}}
+        onStart={(players,score,pro)=>{setGame({players,score,gameNum:1,pro});setScreen("turnOrder");}}
         onSolo={(mode)=>{setSoloMode(mode);setScreen("soloSetup");}}
         onKids={()=>setScreen("kidsSetup")}/>}
 
@@ -1406,6 +1450,7 @@ export default function App(){
       {(screen==="multi"||screen==="multiNext")&&game&&<MultiGame
         players={game.orderedPlayers||game.players}
         startScore={game.score}
+        proMode={game.pro||false}
         initialGn={game.gameNum||1}
         initialSs={game.prevSs||null}
         onReset={()=>setScreen("home")}

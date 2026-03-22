@@ -338,9 +338,22 @@ function ProgressChart({history,color}){
   );
 }
 
+// ─── useBeforeUnload ──────────────────────────────────────────────────────────
+function useBeforeUnload(lang){
+  useEffect(()=>{
+    const msg=lang==="he"
+      ?"המשחק יאבד — בטוח שרוצה לצאת?"
+      :"Game in progress — sure you want to leave?";
+    const handler=e=>{e.preventDefault();e.returnValue=msg;return msg;};
+    window.addEventListener("beforeunload",handler);
+    return()=>window.removeEventListener("beforeunload",handler);
+  },[lang]);
+}
+
 // ─── Kids Game ────────────────────────────────────────────────────────────────
 function KidsGame({players,target,timerSecs,ballsPerTurn,onBack}){
   const {t,lang}=useT();
+  useBeforeUnload(lang);
   const COLORS=["#FF6B35","#00E5FF","#B9FF66","#FF3CAC","#FFD700","#A78BFA"];
   const bpt=ballsPerTurn||3;
   const [scores,setScores]=useState(players.map(()=>0));
@@ -588,6 +601,7 @@ function SoloSummary({result,soloMode,onNewGame,onBack}){
 // ─── Solo Game ────────────────────────────────────────────────────────────────
 function SoloGame({soloMode,startScore,onBack}){
   const {t,lang}=useT();const dir=lang==="he"?"rtl":"ltr";const color="#FF6B35";
+  useBeforeUnload(lang);
   const [score,setScore]=useState(startScore);const [rounds,setRounds]=useState([]);const [darts,setDarts]=useState(0);const [busts,setBusts]=useState(0);const [highRound,setHighRound]=useState(0);const [soloExpr,setSoloExpr]=useState("");const [visual,setVisual]=useState(false);const [pending,setPending]=useState([]);const [notif,setNotif]=useState(null);const [timeLeft,setTimeLeft]=useState(CLOCK_SECONDS);const [clockRunning,setClockRunning]=useState(soloMode==="clock");const [clockScore,setClockScore]=useState(0);const [result,setResult]=useState(null);
   const timerRef=useRef(null);
   useEffect(()=>{if(soloMode!=="clock"||!clockRunning)return;timerRef.current=setInterval(()=>{setTimeLeft(t=>{if(t<=1){clearInterval(timerRef.current);setClockRunning(false);return 0;}return t-1;});},1000);return()=>clearInterval(timerRef.current);},[clockRunning]);
@@ -894,6 +908,7 @@ function MainSetup({onStart,onSolo,onKids}){
 // ─── Multi Game ───────────────────────────────────────────────────────────────
 function MultiGame({players,startScore,onReset,onNextRound,initialGn,initialSs,proMode}){
   const {t,lang}=useT();const dir=lang==="he"?"rtl":"ltr";
+  useBeforeUnload(lang);
   const initP=()=>players.map((p,i)=>({name:p.name||p,color:PLAYER_COLORS[i],score:startScore,rounds:[],darts:0,highRound:0,busts:0}));
   const initS=()=>initialSs||players.map((p,i)=>({name:p.name||p,color:PLAYER_COLORS[i],wins:0,totalDarts:0,totalScore:0,totalRounds:0,allHighRound:0,totalBusts:0}));
   const [gs,setGs]=useState(initP);const [ss,setSs]=useState(initS);const [cur,setCur]=useState(0);const [expr,setExpr]=useState("");const [winner,setWinner]=useState(null);const [rn,setRn]=useState(1);const [gn,setGn]=useState(initialGn||1);const [notif,setNotif]=useState(null);const [vis,setVis]=useState(false);const [pend,setPend]=useState([]);const [editing,setEditing]=useState(null);

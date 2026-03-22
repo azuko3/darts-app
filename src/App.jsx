@@ -587,25 +587,28 @@ function SoloSummary({result,soloMode,onNewGame,onBack}){
 // ─── Solo Game ────────────────────────────────────────────────────────────────
 function SoloGame({soloMode,startScore,onBack}){
   const {t,lang}=useT();const dir=lang==="he"?"rtl":"ltr";const color="#FF6B35";
-  const [score,setScore]=useState(startScore);const [rounds,setRounds]=useState([]);const [darts,setDarts]=useState(0);const [busts,setBusts]=useState(0);const [highRound,setHighRound]=useState(0);const [inputValue,setInputValue]=useState("");const [visual,setVisual]=useState(false);const [pending,setPending]=useState([]);const [notif,setNotif]=useState(null);const [timeLeft,setTimeLeft]=useState(CLOCK_SECONDS);const [clockRunning,setClockRunning]=useState(soloMode==="clock");const [clockScore,setClockScore]=useState(0);const [result,setResult]=useState(null);
+  const [score,setScore]=useState(startScore);const [rounds,setRounds]=useState([]);const [darts,setDarts]=useState(0);const [busts,setBusts]=useState(0);const [highRound,setHighRound]=useState(0);const [soloExpr,setSoloExpr]=useState("");const [visual,setVisual]=useState(false);const [pending,setPending]=useState([]);const [notif,setNotif]=useState(null);const [timeLeft,setTimeLeft]=useState(CLOCK_SECONDS);const [clockRunning,setClockRunning]=useState(soloMode==="clock");const [clockScore,setClockScore]=useState(0);const [result,setResult]=useState(null);
   const timerRef=useRef(null);
   useEffect(()=>{if(soloMode!=="clock"||!clockRunning)return;timerRef.current=setInterval(()=>{setTimeLeft(t=>{if(t<=1){clearInterval(timerRef.current);setClockRunning(false);return 0;}return t-1;});},1000);return()=>clearInterval(timerRef.current);},[clockRunning]);
   useEffect(()=>{if(soloMode==="clock"&&timeLeft===0&&clockRunning===false&&!result){const avg=rounds.length>0?(rounds.reduce((a,b)=>a+b,0)/rounds.length):0;const history=loadHistory().filter(g=>g.soloMode==="clock");const prevBest=history.length>0?Math.max(...history.map(g=>g.finalScore||0)):0;const isNew=clockScore>prevBest;const rec={soloMode:"clock",date:Date.now(),finalScore:clockScore,avgPerRound:avg,dartsTotal:darts,highRound,busts,checkoutRate:null};saveGame(rec);setResult({...rec,newRecord:isNew});}},[timeLeft,clockRunning]);
   function showNotif(msg,c="#FFD700"){setNotif({msg,c});setTimeout(()=>setNotif(null),2000);}
   function commit(val,dartsUsed=3){
     if(isNaN(val)||val<0||val>180){showNotif(t.invalid_score,"#FF3CAC");return;}
-    if(soloMode==="clock"){setClockScore(s=>s+val);setRounds(r=>[...r,val]);setDarts(d=>d+dartsUsed);if(val>highRound)setHighRound(val);if(val===180)showNotif("🔥 MAX! 180!","#FFD700");else if(val>=100)showNotif(`⚡ ${val}!`,"#B9FF66");setInputValue("");setPending([]);return;}
+    if(soloMode==="clock"){setClockScore(s=>s+val);setRounds(r=>[...r,val]);setDarts(d=>d+dartsUsed);if(val>highRound)setHighRound(val);if(val===180)showNotif("🔥 MAX! 180!","#FFD700");else if(val>=100)showNotif(`⚡ ${val}!`,"#B9FF66");setSoloExpr("");setPending([]);return;}
     const ns=score-val;
     if(ns<0){setBusts(b=>b+1);showNotif(t.bust("",score),"#FF3CAC");}
     else if(ns===0){const nr=[...rounds,val];const nd=darts+dartsUsed;const avg=nr.reduce((a,b)=>a+b,0)/nr.length;const history=loadHistory().filter(g=>g.soloMode===soloMode);const prevBest=soloMode==="challenge"?Math.min(...history.map(g=>g.dartsTotal||999),999):Math.max(...history.map(g=>g.avgPerRound||0),0);const isNew=soloMode==="challenge"?nd<prevBest:avg>prevBest;const cr=Math.round((1/(rounds.length+1))*100);const rec={soloMode,date:Date.now(),avgPerRound:avg,dartsTotal:nd,highRound:Math.max(highRound,val),busts,checkoutRate:cr,finalScore:startScore};saveGame(rec);setResult({...rec,newRecord:isNew});return;}
     else{setScore(ns);setRounds(r=>[...r,val]);setDarts(d=>d+dartsUsed);if(val>highRound)setHighRound(val);if(val===180)showNotif("🔥 MAX! 180!","#FFD700");else if(val>=100)showNotif(`⚡ ${val}!`,"#B9FF66");}
-    setInputValue("");setPending([]);
+    setSoloExpr("");setPending([]);
   }
-  function handleDart(dart){const nd=[...pending,dart];setPending(nd);if(nd.length===3){const total=nd.reduce((s,d)=>s+d.pts,0);setTimeout(()=>commit(total,3),400);}}
+  function handleDart(dart){const nd=[...pending,dart];setPending(nd);
+    setSoloExpr(nd.map(d=>d.pts).join("+")+"+");
+    if(nd.length===3){const total=nd.reduce((s,d)=>s+d.pts,0);setTimeout(()=>{commit(total,3);setSoloExpr("");},400);}
+  }
   const avg=rounds.length>0?(rounds.reduce((a,b)=>a+b,0)/rounds.length).toFixed(1):"—";
   const mins=String(Math.floor(timeLeft/60)).padStart(2,"0"),secs2=String(timeLeft%60).padStart(2,"0");
   const quickScores=[26,41,45,60,81,85,100,140,180];
-  if(result)return(<SoloSummary result={result} soloMode={soloMode} onNewGame={()=>{setResult(null);setScore(startScore);setRounds([]);setDarts(0);setBusts(0);setHighRound(0);setInputValue("");setPending([]);setClockScore(0);setTimeLeft(CLOCK_SECONDS);setClockRunning(soloMode==="clock");}} onBack={onBack}/>);
+  if(result)return(<SoloSummary result={result} soloMode={soloMode} onNewGame={()=>{setResult(null);setScore(startScore);setRounds([]);setDarts(0);setBusts(0);setHighRound(0);setSoloExpr("");setPending([]);setClockScore(0);setTimeLeft(CLOCK_SECONDS);setClockRunning(soloMode==="clock");}} onBack={onBack}/>);
   return(
     <div style={{minHeight:"100vh",background:"#0a0a0f",fontFamily:"'Courier New',monospace",direction:dir,padding:"16px",backgroundImage:"linear-gradient(rgba(0,229,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.02) 1px,transparent 1px)",backgroundSize:"40px 40px"}}>
       {notif&&<div style={{position:"fixed",top:"20px",left:"50%",transform:"translateX(-50%)",background:"#0a0a0f",border:`1px solid ${notif.c}`,borderRadius:"10px",padding:"12px 28px",color:notif.c,fontWeight:"bold",fontSize:"1.2rem",letterSpacing:"0.1em",zIndex:100,boxShadow:`0 0 30px ${notif.c}50`,animation:"fadeIn 0.3s ease"}}>{notif.msg}</div>}
@@ -617,11 +620,34 @@ function SoloGame({soloMode,startScore,onBack}){
         {soloMode==="clock"?(<><div style={{background:`rgba(${rgb(color)},0.1)`,border:`1px solid ${color}40`,borderRadius:"12px",padding:"14px",textAlign:"center"}}><div style={{color:"#555",fontSize:"0.65rem",marginBottom:"4px"}}>⏱️ {t.time_left}</div><div style={{color:timeLeft<30?"#FF3CAC":color,fontSize:"2rem",fontWeight:"bold",textShadow:timeLeft<30?"0 0 20px #FF3CAC":"none"}}>{mins}:{secs2}</div></div><div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",padding:"14px",textAlign:"center"}}><div style={{color:"#555",fontSize:"0.65rem",marginBottom:"4px"}}>🎯 Score</div><div style={{color:"#FFD700",fontSize:"2rem",fontWeight:"bold"}}>{clockScore}</div></div></>):(<><div style={{background:`rgba(${rgb(color)},0.1)`,border:`1px solid ${color}40`,borderRadius:"12px",padding:"14px",textAlign:"center"}}><div style={{color:"#555",fontSize:"0.65rem",marginBottom:"4px"}}>{t.remaining}</div><div style={{color,fontSize:"2.2rem",fontWeight:"bold",textShadow:`0 0 20px ${color}`}}>{score}</div></div><div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",padding:"14px",textAlign:"center"}}><div style={{color:"#555",fontSize:"0.65rem",marginBottom:"4px"}}>{t.avg_per_round}</div><div style={{color:"#00E5FF",fontSize:"1.6rem",fontWeight:"bold"}}>{avg}</div></div><div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",padding:"14px",textAlign:"center"}}><div style={{color:"#555",fontSize:"0.65rem",marginBottom:"4px"}}>{t.col_darts}</div><div style={{color:"#B9FF66",fontSize:"1.6rem",fontWeight:"bold"}}>{darts}</div></div></>)}
       </div>
       <div style={{display:"flex",gap:"8px",marginBottom:"16px",justifyContent:"center"}}>
-        {[false,true].map(isV=>(<button key={String(isV)} onClick={()=>{setVisual(isV);setPending([]);}} style={{padding:"8px 20px",background:visual===isV?color:"rgba(255,255,255,0.04)",border:`1px solid ${visual===isV?color:"rgba(255,255,255,0.12)"}`,borderRadius:"8px",color:visual===isV?"#0a0a0f":"#aaa",fontSize:"0.8rem",fontWeight:"bold",cursor:"pointer",fontFamily:"'Courier New',monospace",transition:"all 0.2s"}}>{isV?`🎯 ${t.mode_visual}`:`⌨️ ${t.mode_classic}`}</button>))}
+        {[false,true].map(isV=>(<button key={String(isV)} onClick={()=>{
+          if(isV&&!visual&&soloExpr){
+            const parts=soloExpr.split("+").filter(p=>p.trim()&&parseInt(p)>0);
+            const fakeDarts=parts.slice(0,3).map(p=>({pts:parseInt(p),label:p,x:150,y:150,zone:"single"}));
+            setPending(fakeDarts);
+          }
+          if(!isV&&visual&&pending.length>0) setSoloExpr(pending.map(d=>d.pts).join("+")+"+");
+          setVisual(isV);
+        }} style={{padding:"8px 20px",background:visual===isV?color:"rgba(255,255,255,0.04)",border:`1px solid ${visual===isV?color:"rgba(255,255,255,0.12)"}`,borderRadius:"8px",color:visual===isV?"#0a0a0f":"#aaa",fontSize:"0.8rem",fontWeight:"bold",cursor:"pointer",fontFamily:"'Courier New',monospace",transition:"all 0.2s"}}>{isV?`🎯 ${t.mode_visual}`:`🔢 ${t.mode_classic}`}</button>))}
       </div>
       <div style={{background:`rgba(${rgb(color)},0.08)`,border:`1px solid ${color}50`,borderRadius:"14px",padding:"16px",marginBottom:"16px"}}>
         {soloMode!=="clock"&&<div style={{textAlign:"center",marginBottom:"8px"}}><CheckoutTip score={score} color={color}/></div>}
-        {visual?(<DartBoard playerColor={color} pendingDarts={pending} onScore={handleDart} onUndo={()=>setPending(p=>p.slice(0,-1))}/>):(<><div style={{display:"flex",gap:"10px",marginBottom:"14px"}}><input type="number" value={inputValue} onChange={e=>setInputValue(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){const v=parseInt(inputValue);setInputValue("");commit(v);}}} min="0" max="180" placeholder={t.enter_score} autoFocus style={{flex:1,background:"rgba(0,0,0,0.3)",border:`1px solid ${color}60`,borderRadius:"10px",padding:"14px 16px",color,fontSize:"1.4rem",fontFamily:"'Courier New',monospace",outline:"none",textAlign:"center",direction:"ltr"}}/><button onClick={()=>{const v=parseInt(inputValue);setInputValue("");commit(v);}} style={{background:color,border:"none",borderRadius:"10px",color:"#0a0a0f",fontWeight:"bold",fontSize:"1rem",padding:"14px 20px",cursor:"pointer",fontFamily:"'Courier New',monospace",boxShadow:`0 0 20px ${color}50`,flexShrink:0}}>{t.confirm}</button></div><div style={{display:"flex",flexWrap:"wrap",gap:"6px",justifyContent:"center"}}>{quickScores.map(s=>(<button key={s} onClick={()=>setInputValue(String(s))} style={{background:inputValue===String(s)?color:`rgba(${rgb(color)},0.15)`,border:`1px solid ${color}40`,borderRadius:"6px",color:inputValue===String(s)?"#0a0a0f":color,padding:"5px 10px",fontSize:"0.8rem",cursor:"pointer",fontFamily:"'Courier New',monospace",fontWeight:"bold"}}>{s}</button>))}</div></>)}
+        {visual
+          ?(<DartBoard playerColor={color} pendingDarts={pending} onScore={handleDart} onUndo={()=>setPending(p=>p.slice(0,-1))}/>)
+          :(<NumPad
+              expr={soloExpr}
+              onExprChange={setSoloExpr}
+              onConfirm={(val)=>{setSoloExpr("");commit(val);}}
+              onUndo={rounds.length>0?()=>{
+                const lastVal=rounds[rounds.length-1];
+                setScore(s=>s+lastVal);
+                setRounds(r=>r.slice(0,-1));
+                setDarts(d=>d-3);
+              }:undefined}
+              lastRound={rounds.length>0?rounds[rounds.length-1]:null}
+              color={color}
+            />)
+        }
       </div>
       {rounds.length>=3&&(<div style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"12px",padding:"12px 14px"}}><div style={{color:"#444",fontSize:"0.7rem",letterSpacing:"0.15em",marginBottom:"8px"}}>📈 {t.progress_chart}</div><ProgressChart history={rounds} color={color}/></div>)}
       <style>{`@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}input[type=number]{-moz-appearance:textfield}`}</style>
@@ -804,7 +830,7 @@ function MultiGame({players,startScore,onReset,onNextRound,initialGn,initialSs})
   const {t,lang}=useT();const dir=lang==="he"?"rtl":"ltr";
   const initP=()=>players.map((p,i)=>({name:p.name||p,color:PLAYER_COLORS[i],score:startScore,rounds:[],darts:0,highRound:0,busts:0}));
   const initS=()=>initialSs||players.map((p,i)=>({name:p.name||p,color:PLAYER_COLORS[i],wins:0,totalDarts:0,totalScore:0,totalRounds:0,allHighRound:0,totalBusts:0}));
-  const [gs,setGs]=useState(initP);const [ss,setSs]=useState(initS);const [cur,setCur]=useState(0);const [iv,setIv]=useState("");const [winner,setWinner]=useState(null);const [rn,setRn]=useState(1);const [gn,setGn]=useState(initialGn||1);const [notif,setNotif]=useState(null);const [vis,setVis]=useState(false);const [pend,setPend]=useState([]);const [editing,setEditing]=useState(null);
+  const [gs,setGs]=useState(initP);const [ss,setSs]=useState(initS);const [cur,setCur]=useState(0);const [expr,setExpr]=useState("");const [winner,setWinner]=useState(null);const [rn,setRn]=useState(1);const [gn,setGn]=useState(initialGn||1);const [notif,setNotif]=useState(null);const [vis,setVis]=useState(false);const [pend,setPend]=useState([]);const [editing,setEditing]=useState(null);
   const showN=(msg,c="#FFD700")=>{setNotif({msg,c});setTimeout(()=>setNotif(null),2000);};
   function commit(val,du=3){
     if(isNaN(val)||val<0||val>180){showN(t.invalid_score,"#FF3CAC");return;}
@@ -812,10 +838,14 @@ function MultiGame({players,startScore,onReset,onNextRound,initialGn,initialSs})
     if(ns<0){p.busts+=1;showN(t.bust(p.name,p.score),"#FF3CAC");}
     else if(ns===0){p.score=0;p.rounds=[...p.rounds,val];p.darts+=du;if(val>p.highRound)p.highRound=val;upd[cur]=p;setGs(upd);setSs(prev=>prev.map((s,idx)=>{const gp=idx===cur?p:upd[idx];return{...s,wins:s.wins+(idx===cur?1:0),totalDarts:s.totalDarts+gp.darts,totalScore:s.totalScore+gp.rounds.reduce((a,b)=>a+b,0),totalRounds:s.totalRounds+gp.rounds.length,allHighRound:Math.max(s.allHighRound,gp.highRound),totalBusts:s.totalBusts+gp.busts};}));setWinner(p.name);return;}
     else{p.score=ns;p.rounds=[...p.rounds,val];p.darts+=du;if(val>p.highRound)p.highRound=val;if(val===180)showN("🔥 MAX! 180!","#FFD700");else if(val>=100)showN(`⚡ ${val}!`,"#B9FF66");}
-    upd[cur]=p;setGs(upd);setIv("");setPend([]);const next=(cur+1)%players.length;if(next===0)setRn(r=>r+1);setCur(next);
+    upd[cur]=p;setGs(upd);setExpr("");setPend([]);const next=(cur+1)%players.length;if(next===0)setRn(r=>r+1);setCur(next);
   }
-  function commitFromInput(){const val=parseInt(iv);setIv("");commit(val);}
-  function handleDart(dart){const nd=[...pend,dart];setPend(nd);if(nd.length===3){const tot=nd.reduce((s,d)=>s+d.pts,0);setTimeout(()=>commit(tot,3),400);}}
+  function commitFromInput(val){setExpr("");commit(val);}
+  function handleDart(dart){const nd=[...pend,dart];setPend(nd);
+    // sync to expr: build "60+57+" style
+    setExpr(nd.map(d=>d.pts).join("+")+"+");
+    if(nd.length===3){const tot=nd.reduce((s,d)=>s+d.pts,0);setTimeout(()=>{commit(tot,3);setExpr("");},400);}
+  }
   function editSave(nv){if(isNaN(nv)||nv<0||nv>180){setEditing(null);return;}const upd=[...gs];const p={...upd[editing]};const old=p.rounds[p.rounds.length-1];if(old===undefined){setEditing(null);return;}const ns=p.score+old-nv;if(ns<0){showN(t.invalid_score,"#FF3CAC");setEditing(null);return;}p.score=ns;p.rounds=[...p.rounds.slice(0,-1),nv];p.highRound=Math.max(...p.rounds,0);upd[editing]=p;setGs(upd);setEditing(null);showN(`✎ תוקן ל-${nv}`,"#00E5FF");}
   const nextRound=()=>onNextRound(gs,gn+1,ss);
   const cp=gs[cur];const qsc=[26,41,45,60,81,85,100,140,180];
@@ -860,12 +890,34 @@ function MultiGame({players,startScore,onReset,onNextRound,initialGn,initialSs})
         </div>))}
       </div>
       <div style={{display:"flex",gap:"8px",marginBottom:"16px",justifyContent:"center"}}>
-        {[false,true].map(isV=>(<button key={String(isV)} onClick={()=>{setVis(isV);setPend([]);}} style={{padding:"8px 20px",background:vis===isV?cp.color:"rgba(255,255,255,0.04)",border:`1px solid ${vis===isV?cp.color:"rgba(255,255,255,0.12)"}`,borderRadius:"8px",color:vis===isV?"#0a0a0f":"#aaa",fontSize:"0.8rem",fontWeight:"bold",cursor:"pointer",fontFamily:"'Courier New',monospace",letterSpacing:"0.1em",boxShadow:vis===isV?`0 0 12px ${cp.color}40`:"none",transition:"all 0.2s"}}>{isV?`🎯 ${t.mode_visual}`:`⌨️ ${t.mode_classic}`}</button>))}
+        {[false,true].map(isV=>(<button key={String(isV)} onClick={()=>{
+          if(isV&&!vis){
+            // classic→visual: parse expr into pending dart circles
+            const parts=expr.split("+").filter(p=>p.trim()&&parseInt(p)>0);
+            const fakeDarts=parts.slice(0,3).map(p=>({pts:parseInt(p),label:p,x:150,y:150,zone:"single"}));
+            setPend(fakeDarts);
+          }
+          if(!isV&&vis){
+            // visual→classic: convert pend to expr
+            if(pend.length>0) setExpr(pend.map(d=>d.pts).join("+")+"+");
+          }
+          setVis(isV);
+        }} style={{padding:"8px 20px",background:vis===isV?cp.color:"rgba(255,255,255,0.04)",border:`1px solid ${vis===isV?cp.color:"rgba(255,255,255,0.12)"}`,borderRadius:"8px",color:vis===isV?"#0a0a0f":"#aaa",fontSize:"0.8rem",fontWeight:"bold",cursor:"pointer",fontFamily:"'Courier New',monospace",letterSpacing:"0.1em",boxShadow:vis===isV?`0 0 12px ${cp.color}40`:"none",transition:"all 0.2s"}}>{isV?`🎯 ${t.mode_visual}`:`🔢 ${t.mode_classic}`}</button>))}
       </div>
       <div style={{background:`rgba(${rgb(cp.color)},0.08)`,border:`1px solid ${cp.color}50`,borderRadius:"14px",padding:"16px",marginBottom:"16px"}}>
-        <div style={{color:cp.color,fontSize:"0.8rem",letterSpacing:"0.15em",marginBottom:"4px",textAlign:"center"}}>🎯 {cp.name} — {t.remaining}: <strong>{cp.score}</strong></div>
+        <div style={{color:cp.color,fontSize:"0.8rem",letterSpacing:"0.15em",marginBottom:"4px",textAlign:"center"}}>💘 {cp.name} — {t.remaining}: <strong>{cp.score}</strong></div>
         <div style={{textAlign:"center",marginBottom:"8px"}}><CheckoutTip score={cp.score} color={cp.color}/></div>
-        {vis?(<DartBoard playerColor={cp.color} pendingDarts={pend} onScore={handleDart} onUndo={()=>setPend(p=>p.slice(0,-1))}/>):(<><div style={{display:"flex",gap:"10px",marginBottom:"14px"}}><input type="number" value={iv} onChange={e=>setIv(e.target.value)} onKeyDown={e=>e.key==="Enter"&&commitFromInput()} min="0" max="180" placeholder={t.enter_score} autoFocus style={{flex:1,background:"rgba(0,0,0,0.3)",border:`1px solid ${cp.color}60`,borderRadius:"10px",padding:"14px 16px",color:cp.color,fontSize:"1.4rem",fontFamily:"'Courier New',monospace",outline:"none",textAlign:"center",direction:"ltr"}}/><button onClick={commitFromInput} style={{background:cp.color,border:"none",borderRadius:"10px",color:"#0a0a0f",fontWeight:"bold",fontSize:"1rem",padding:"14px 20px",cursor:"pointer",fontFamily:"'Courier New',monospace",boxShadow:`0 0 20px ${cp.color}50`,flexShrink:0}}>{t.confirm}</button></div><div style={{display:"flex",flexWrap:"wrap",gap:"6px",justifyContent:"center"}}>{qsc.map(s=>(<button key={s} onClick={()=>setIv(String(s))} style={{background:iv===String(s)?cp.color:`rgba(${rgb(cp.color)},0.15)`,border:`1px solid ${cp.color}40`,borderRadius:"6px",color:iv===String(s)?"#0a0a0f":cp.color,padding:"5px 10px",fontSize:"0.8rem",cursor:"pointer",fontFamily:"'Courier New',monospace",fontWeight:"bold"}}>{s}</button>))}</div></>)}
+        {vis
+          ?(<DartBoard playerColor={cp.color} pendingDarts={pend} onScore={handleDart} onUndo={()=>{setPend(p=>p.slice(0,-1));setExpr(e=>e.split("+").filter(Boolean).slice(0,-1).join("+")||"");}}/>)
+          :(<NumPad
+              expr={expr}
+              onExprChange={setExpr}
+              onConfirm={(val)=>commitFromInput(val)}
+              onUndo={cp.rounds.length>0?()=>setEditing(cur):undefined}
+              lastRound={cp.rounds.length>0?cp.rounds[cp.rounds.length-1]:null}
+              color={cp.color}
+            />)
+        }
       </div>
       <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"12px",padding:"14px",overflowX:"auto"}}>
         <div style={{color:"#444",fontSize:"0.7rem",letterSpacing:"0.2em",marginBottom:"10px"}}>📊 {t.stats}</div>
@@ -873,6 +925,150 @@ function MultiGame({players,startScore,onReset,onNextRound,initialGn,initialSs})
         <div style={{display:"flex",gap:"8px",marginTop:"14px",flexWrap:"wrap"}}>{(()=>{const all=gs.flatMap(p=>p.rounds.map(r=>({r,name:p.name,color:p.color})));const best=all.reduce((m,x)=>x.r>(m?.r??-1)?x:m,null);const leading=[...gs].sort((a,b)=>a.score-b.score)[0];return[best&&{label:t.hl_best,val:`${best.r} (${best.name})`,color:best.color},leading&&{label:t.hl_leading,val:leading.name,color:leading.color}].filter(Boolean).map((h,i)=>(<div key={i} style={{background:`rgba(${rgb(h.color)},0.1)`,border:`1px solid ${h.color}30`,borderRadius:"8px",padding:"6px 12px",display:"flex",flexDirection:"column",alignItems:"flex-start",gap:"2px"}}><span style={{color:"#666",fontSize:"0.6rem"}}>{h.label}</span><span style={{color:h.color,fontSize:"0.8rem",fontWeight:"bold"}}>{h.val}</span></div>));})()}</div>
       </div>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}input[type=number]{-moz-appearance:textfield}`}</style>
+    </div>
+  );
+}
+
+// ─── NumPad ───────────────────────────────────────────────────────────────────
+// expr: string like "" | "60" | "60+" | "60+57"
+function NumPad({expr,onExprChange,onConfirm,onUndo,color,lastRound}){
+  const hasUndo=lastRound!==undefined&&lastRound!==null;
+  const [shake,setShake]=useState(false);
+
+  function shakeError(){
+    if(navigator.vibrate) navigator.vibrate([40,20,40]);
+    setShake(true);
+    setTimeout(()=>setShake(false),400);
+  }
+
+  function evalExpr(e){
+    if(!e)return 0;
+    return e.split("+").filter(Boolean).reduce((s,p)=>s+(parseInt(p)||0),0);
+  }
+  function currentToken(e){
+    if(!e||e.endsWith("+"))return "";
+    const parts=e.split("+");
+    return parts[parts.length-1];
+  }
+
+  const endsWithPlus=expr.endsWith("+");
+  const token=currentToken(expr);
+  const total=evalExpr(expr);
+  const overLimit=total>180;
+  const canEnter=expr.length>0&&!endsWithPlus&&total>0&&total<=180;
+
+  const plusCount=(expr.match(/\+/g)||[]).length;
+
+  function press(key){
+    if(key==="back"){
+      if(!expr)return;
+      if(navigator.vibrate) navigator.vibrate(8);
+      onExprChange(expr.slice(0,-1));
+    } else if(key==="plus"){
+      if(!expr||endsWithPlus){return;}
+      if(plusCount>=2){shakeError();return;}
+      if(total>=180)return;
+      if(navigator.vibrate) navigator.vibrate(15);
+      onExprChange(expr+"+");
+    } else {
+      if(navigator.vibrate) navigator.vibrate(8);
+      if(token.length>=3)return;
+      const next=expr+key;
+      const nextTotal=evalExpr(next);
+      if(nextTotal>180){
+        onExprChange(next);
+        return;
+      }
+      onExprChange(next);
+    }
+  }
+
+  const hasPlus=expr.includes("+");
+  // build display: show full expression, and if has + show = total at end
+  const parts=expr?expr.split("+").filter(Boolean):[];
+  const displayExpr=expr
+    ?(parts.join(" + ")+(endsWithPlus?" + ":""))
+    :"— — —";
+  const showTotal=hasPlus&&!endsWithPlus&&parts.length>1;
+
+  const keys=[["1","2","3"],["4","5","6"],["7","8","9"],["back","0","plus"]];
+
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+      <div style={{position:"relative"}}>
+        <div style={{
+          background:"rgba(0,0,0,0.35)",
+          border:`1px solid ${overLimit?"#FF3CAC":color+"60"}`,
+          borderRadius:"12px",padding:"12px 12px",
+          color:overLimit?"#FF3CAC":color,
+          fontWeight:"bold",textAlign:"center",letterSpacing:"0.05em",
+          fontFamily:"'Courier New',monospace",
+          minHeight:"64px",display:"flex",flexDirection:"column",
+          alignItems:"center",justifyContent:"center",gap:"4px",
+          transition:"border-color 0.2s,color 0.2s",
+        }}>
+          {/* Main expression */}
+          <div style={{fontSize:displayExpr.length>12?"1.1rem":displayExpr.length>7?"1.3rem":"1.8rem",transition:"font-size 0.15s"}}>
+            {displayExpr}
+          </div>
+          {/* = total shown inline when ready */}
+          {showTotal&&(
+            <div style={{fontSize:"1rem",opacity:0.55,borderTop:`1px solid ${color}30`,paddingTop:"2px",width:"100%",textAlign:"center"}}>
+              = {total}
+            </div>
+          )}
+        </div>
+        {overLimit&&(
+          <div style={{position:"absolute",top:"50%",right:"10px",transform:"translateY(-50%)",
+            fontSize:"0.6rem",color:"#FF3CAC",fontWeight:"bold",lineHeight:1.3,textAlign:"center",
+            fontFamily:"'Courier New',monospace",animation:"blink 0.8s ease infinite"}}>
+            ⚠️<br/>max<br/>180
+          </div>
+        )}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px",direction:"ltr"}}>
+        {keys.flat().map((k,i)=>{
+          const isAction=k==="back"||k==="plus";
+          const label=k==="back"?"⌫":k==="plus"?"+":k;
+          const isShakingPlus=k==="plus"&&shake;
+          return(
+            <button key={i} onClick={()=>press(k)} style={{
+              padding:"18px 8px",
+              background:isShakingPlus?`rgba(255,60,172,0.2)`:isAction?`rgba(${rgb(color)},0.14)`:`rgba(${rgb(color)},0.08)`,
+              border:`1px solid ${isShakingPlus?"#FF3CAC":isAction?color+"70":color+"30"}`,
+              borderRadius:"10px",
+              color:isShakingPlus?"#FF3CAC":color,
+              fontSize:k==="back"?"1.4rem":k==="plus"?"1.6rem":"1.5rem",
+              fontWeight:"bold",cursor:"pointer",fontFamily:"'Courier New',monospace",
+              transition:"transform 0.08s,background 0.15s,color 0.15s,border-color 0.15s",
+              userSelect:"none",
+              animation:isShakingPlus?"shake 0.35s ease":"none",
+            }}
+              onTouchStart={e=>{e.currentTarget.style.transform="scale(0.93)";e.currentTarget.style.background=`rgba(${rgb(color)},0.28)`;}}
+              onTouchEnd={e=>{e.currentTarget.style.transform="scale(1)";e.currentTarget.style.background=isAction?`rgba(${rgb(color)},0.14)`:`rgba(${rgb(color)},0.08)`;}}
+              onMouseDown={e=>e.currentTarget.style.transform="scale(0.93)"}
+              onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}
+            >{label}</button>
+          );
+        })}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:hasUndo?"1fr 1fr":"1fr",gap:"8px",marginTop:"2px"}}>
+        {hasUndo&&(
+          <button onClick={onUndo} style={{padding:"16px",background:"rgba(255,255,255,0.04)",
+            border:"1px solid rgba(255,255,255,0.15)",borderRadius:"10px",
+            color:"#aaa",fontSize:"0.9rem",fontWeight:"bold",cursor:"pointer",
+            fontFamily:"'Courier New',monospace",letterSpacing:"0.1em"}}>↩ Undo</button>
+        )}
+        <button onClick={()=>canEnter&&onConfirm(total)} style={{
+          padding:"16px",background:canEnter?color:"rgba(255,255,255,0.04)",
+          border:canEnter?"none":"1px solid rgba(255,255,255,0.08)",borderRadius:"10px",
+          color:canEnter?"#0a0a0f":"#444",fontSize:"1rem",fontWeight:"bold",
+          cursor:canEnter?"pointer":"default",fontFamily:"'Courier New',monospace",
+          letterSpacing:"0.15em",textTransform:"uppercase",
+          boxShadow:canEnter?`0 0 20px ${color}50`:"none",transition:"all 0.2s",
+        }}>Enter</button>
+      </div>
+      <style>{"@keyframes blink{0%,100%{opacity:1}50%{opacity:0.35}}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}"}</style>
     </div>
   );
 }

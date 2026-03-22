@@ -757,7 +757,44 @@ function MainSetup({onStart,onSolo,onKids}){
 
   return(
     <div style={{minHeight:"100vh",background:"#0a0a0f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Courier New',monospace",direction:dir,padding:"20px"}}>
-      <div style={{position:"fixed",inset:0,pointerEvents:"none",backgroundImage:"linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px)",backgroundSize:"40px 40px"}}/>
+      <div style={{position:"fixed",inset:0,pointerEvents:"none",overflow:"hidden"}}>
+        {/* Animated dots — subtle moving light string */}
+        <canvas ref={el=>{
+          if(!el||el._init)return;el._init=true;
+          const ctx=el.getContext("2d");
+          el.width=window.innerWidth;el.height=window.innerHeight;
+          const dots=Array.from({length:28},()=>({
+            x:Math.random()*el.width,y:Math.random()*el.height,
+            r:Math.random()*1.2+0.3,
+            vx:(Math.random()-0.5)*0.18,vy:(Math.random()-0.5)*0.18,
+            color:Math.random()>0.5?"rgba(255,107,53,":"rgba(0,229,255,",
+            a:Math.random()*0.25+0.08,
+          }));
+          function frame(){
+            ctx.clearRect(0,0,el.width,el.height);
+            dots.forEach(d=>{
+              d.x+=d.vx;d.y+=d.vy;
+              if(d.x<0||d.x>el.width)d.vx*=-1;
+              if(d.y<0||d.y>el.height)d.vy*=-1;
+              ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,2*Math.PI);
+              ctx.fillStyle=d.color+d.a+")";ctx.fill();
+            });
+            // draw faint lines between nearby dots
+            for(let i=0;i<dots.length;i++){
+              for(let j=i+1;j<dots.length;j++){
+                const dx=dots[i].x-dots[j].x,dy=dots[i].y-dots[j].y;
+                const dist=Math.sqrt(dx*dx+dy*dy);
+                if(dist<120){
+                  ctx.beginPath();ctx.moveTo(dots[i].x,dots[i].y);ctx.lineTo(dots[j].x,dots[j].y);
+                  ctx.strokeStyle=`rgba(255,107,53,${0.04*(1-dist/120)})`;ctx.lineWidth=0.4;ctx.stroke();
+                }
+              }
+            }
+            requestAnimationFrame(frame);
+          }
+          frame();
+        }} style={{position:"absolute",inset:0,width:"100%",height:"100%"}}/>
+      </div>
       <div style={{alignSelf:"flex-end",marginBottom:"8px"}}><LangToggle/></div>
 
       <div style={{marginBottom:"24px",textAlign:"center"}}>
